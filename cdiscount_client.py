@@ -349,12 +349,6 @@ class CDiscountClient:
         Returns:
             Dict avec 'package_id', 'status', 'product_count'.
         """
-        if not self.config.is_configured:
-            raise CDiscountAPIError(
-                "Configuration CDiscount incompletes. Definissez "
-                "CDISCOUNT_CLIENT_ID et CDISCOUNT_CLIENT_SECRET."
-            )
-
         if not products:
             logger.warning("Aucun produit a soumettre sur CDiscount")
             return {"package_id": None, "status": "SKIPPED_EMPTY", "product_count": 0}
@@ -376,6 +370,12 @@ class CDiscountClient:
                 "products_sample": product_payloads[:2],
                 "offers_sample": offer_payloads[:2],
             }
+
+        if not self.config.is_configured:
+            raise CDiscountAPIError(
+                "Configuration CDiscount incompletes. Definissez "
+                "CDISCOUNT_CLIENT_ID et CDISCOUNT_CLIENT_SECRET."
+            )
 
         # Etape 1 : soumettre les fiches produits
         response = self._post("/products-integration", body)

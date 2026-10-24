@@ -148,13 +148,24 @@ def _extract_bullet_points(soup: BeautifulSoup) -> List[str]:
     """Extrait les points cles (Caractéristiques) de la page produit."""
     bullets: List[str] = []
 
+    # Mots-cles pour filtrer le contenu de navigation
+    nav_keywords = {
+        "accueil", "à propos", "produits", "contactez-nous",
+        "mentions légales", "conditions générales", "politique de confidentialité",
+        "cgv", "mentions", "confidentialité",
+        "06 19 32 00 51", "contact@atelierdelafourmi.fr",
+        "service client", "aide", "faq", "blog",
+    }
+
     # Chercher les listes a puces dans la description
     desc = soup.find("div", class_=re.compile(r"product_description|description", re.I))
     if desc:
         for li in desc.find_all("li"):
             text = li.get_text(strip=True)
             if text and len(text) > 3:
-                bullets.append(text)
+                normalized = text.lower()
+                if not any(kw in normalized for kw in nav_keywords):
+                    bullets.append(text)
 
     if not bullets:
         # Fallback : chercher les balises <li> apres le titre
@@ -164,7 +175,9 @@ def _extract_bullet_points(soup: BeautifulSoup) -> List[str]:
             for li in parent.find_all_next("li", limit=15):
                 text = li.get_text(strip=True)
                 if text and len(text) > 3:
-                    bullets.append(text)
+                    normalized = text.lower()
+                    if not any(kw in normalized for kw in nav_keywords):
+                        bullets.append(text)
 
     return bullets
 

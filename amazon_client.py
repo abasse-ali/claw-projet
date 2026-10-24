@@ -339,13 +339,6 @@ class AmazonClient:
         Returns:
             Dict avec 'feed_id', 'status', 'product_count'.
         """
-        if not self.config.is_configured:
-            raise AmazonAPIError(
-                "Configuration Amazon incomplete. Definissez AMAZON_SELLER_ID, "
-                "AMAZON_AWS_ACCESS_KEY_ID, AMAZON_AWS_SECRET_ACCESS_KEY, "
-                "AMAZON_LWA_CLIENT_ID, AMAZON_LWA_CLIENT_SECRET, AMAZON_LWA_REFRESH_TOKEN."
-            )
-
         if not products:
             logger.warning("Aucun produit a soumettre sur Amazon")
             return {"feed_id": None, "status": "SKIPPED_EMPTY", "product_count": 0}
@@ -357,6 +350,13 @@ class AmazonClient:
         if dry_run:
             logger.info("[MODE TEST] Flux genere mais non envoye : %s", feed_content[:500])
             return {"feed_id": None, "status": "DRY_RUN", "product_count": len(products)}
+
+        if not self.config.is_configured:
+            raise AmazonAPIError(
+                "Configuration Amazon incomplete. Definissez AMAZON_SELLER_ID, "
+                "AMAZON_AWS_ACCESS_KEY_ID, AMAZON_AWS_SECRET_ACCESS_KEY, "
+                "AMAZON_LWA_CLIENT_ID, AMAZON_LWA_CLIENT_SECRET, AMAZON_LWA_REFRESH_TOKEN."
+            )
 
         # Etape 1 : creer le document de flux
         feed_doc = self._create_feed_document()
