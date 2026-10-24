@@ -53,38 +53,44 @@ def mock_empty_sitemap(mock_empty_sitemap_xml):
 # --------------------------------------------------------------------------- #
 @pytest.fixture
 def mock_product_html():
-    """Retourne le HTML d'une page produit Odoo type avec JSON-LD."""
+    """Retourne le HTML d'une page produit Odoo type avec JSON-LD en liste."""
     return """<!DOCTYPE html>
 <html>
 <head>
   <title>Panneau PVC effet marbre - Atelier de la Fourmi</title>
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    "name": "Panneau PVC effet marbre",
-    "image": "https://www.atelierdelafourmi.fr/web/image/product.product/5/image_1920",
-    "description": "Panneau de sol en PVC effet marbre",
-    "sku": "5",
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "EUR",
-      "price": "50.00",
-      "availability": "https://schema.org/InStock",
-      "url": "https://www.atelierdelafourmi.fr/shop/panneau-pvc-effet-marbre-5"
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "OnlineStore",
+      "name": "L'Atelier de la Fourmi",
+      "url": "https://www.atelierdelafourmi.fr"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "Panneau PVC effet marbre",
+      "image": "https://www.atelierdelafourmi.fr/web/image/product.product/5/image_1920",
+      "description": "Panneau de sol en PVC effet marbre",
+      "sku": "5",
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "EUR",
+        "price": "50.00",
+        "availability": "https://schema.org/InStock",
+        "url": "https://www.atelierdelafourmi.fr/shop/panneau-pvc-effet-marbre-5"
+      }
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Panneaux PVC"
+      }]
     }
-  }
-  </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org/",
-    "@type": "BreadcrumbList",
-    "itemListElement": [{
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Panneaux PVC"
-    }]
-  }
+  ]
   </script>
 </head>
 <body>
@@ -131,7 +137,7 @@ def mock_scrape_responses(mock_sitemap_response, mock_product_page_response):
             stock_quantity=1,
             gtin=None,
             category="Panneaux PVC",
-            url="https://www.atelierdelafourmi.fr/shop/panneau-pvc-effet-marbre-5",
+            source_url="https://www.atelierdelafourmi.fr/shop/panneau-pvc-effet-marbre-5",
         )
 
         yield
@@ -152,6 +158,6 @@ def mock_scrape_product():
             stock_quantity=1,
             gtin=None,
             category="Panneaux PVC",
-            url="https://www.atelierdelafourmi.fr/shop/panneau-pvc-effet-marbre-5",
+            source_url="https://www.atelierdelafourmi.fr/shop/panneau-pvc-effet-marbre-5",
         )
         yield mock

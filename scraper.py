@@ -102,11 +102,13 @@ def _find_description(soup: BeautifulSoup) -> str:
     """
     Extrait la description du produit depuis le HTML de la page.
 
-    Odoo place la description dans une balise <article> ou un div avec
-    la classe 'o_product_description' ou 'description'.
+    Odoo place la description dans une div avec la classe
+    'o_wsale_product_details_content_section' ou 'oe_structure'.
     """
-    # Essayer les selecteurs classiques d'Odoo
+    # Selecteurs specifiques au site Odoo d'Atelier de la Fourmi
     desc_selectors = [
+        "div.o_wsale_product_details_content_section",
+        "div.oe_structure.mb-3.text-muted",
         "div.o_product_description",
         "div.description",
         "article.product-description",
@@ -117,7 +119,9 @@ def _find_description(soup: BeautifulSoup) -> str:
         el = soup.select_one(selector)
         if el:
             text = el.get_text(separator=" ", strip=True)
-            if text:
+            # Filtrer les textes qui ne sont pas une vraie description
+            # (ex: "Liste de prix: Par défaut" ou les prix qui se glissent)
+            if text and len(text) > 20 and not text.lower().startswith("tous les produits"):
                 return text
 
     # Fallback : chercher le texte apres le titre du produit
@@ -250,6 +254,12 @@ def scrape_product(
             items = data.get("itemListElement", [])
             if items:
                 category = items[0].get("name", "")
+        elif isinstance(data, list):
+            for item in data:
+                if isinstance(item, dict) and item.get("@type") == "BreadcrumbList":
+                    items = item.get("itemListElement", [])
+                    if items:
+                        category = items[0].get("name", "")
 
     # Extraire la disponibilite
     stock_quantity = 0
