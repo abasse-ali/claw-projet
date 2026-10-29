@@ -1,0 +1,73 @@
+/* Tailwind, puis le kit (dans la couche « components » : une classe de Tailwind posée sur un
+   bloc du kit l'emporte sur lui), puis les couleurs de l'appli. */
+@import "tailwindcss";
+@import "./kit/app-kit.css" layer(components);
+@import "./theme.css";
+
+/* Les jetons du kit en couleurs de Tailwind : bg-surface, text-muted, border-line, text-accent… */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-income: var(--income);
+  --color-error: var(--error);
+  --color-warn: var(--warn);
+  --radius-card: var(--radius);
+}
+
+/* Styles personnalisés pour l'appli voyage */
+.empty-state {
+  @apply text-center py-12;
+}
+
+.empty-state__icon {
+  @apply mx-auto mb-4 text-muted;
+}
+
+.empty-state h3 {
+  @apply text-lg font-medium mb-2;
+}
+
+.empty-state p {
+  @apply text-muted text-sm mb-4;
+}
+
+.chips--checkbox {
+  @apply flex flex-wrap gap-2;
+}
+
+.chip-checkbox {
+  @apply inline-flex items-center gap-2 px-3 py-2 rounded-full bg-surface border border-line text-sm cursor-pointer;
+}
+
+.chip-checkbox input[type="checkbox"] {
+  @apply accent-accent;
+}
+
+.field__select {
+  @apply w-full px-3 py-2 rounded-lg border border-line bg-surface text-base;
+}
+
+.field__help {
+  @apply text-xs text-muted mt-1;
+}
+
+.balance-summary {
+  @apply mt-4 p-3 rounded-lg bg-faint text-center text-sm;
+}
+
+.settlement-note {
+  @apply mt-4 text-xs text-muted text-center;
+}
+
+.app-bar {
+  @apply px-4 py-3;
+}
+
+.app-bar__title {
+  @apply text-lg font-semibold;
+}
