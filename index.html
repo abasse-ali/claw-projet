@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi Dépenses</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Mes Dépenses</h1>
+    <div id="monthly-total" class="monthly-total">0,00 €</div>
+  </header>
+
+  <main class="app-main">
+    <section class="filter-section" aria-label="Filtrer par catégorie">
+      <label for="category-filter" class="visually-hidden">Catégorie</label>
+      <select id="category-filter" class="filter-select">
+        <option value="">Toutes</option>
+        <option value="Courses">Courses</option>
+        <option value="Transport">Transport</option>
+        <option value="Logement">Logement</option>
+        <option value="Loisirs">Loisirs</option>
+        <option value="Autre">Autre</option>
+      </select>
+    </section>
+
+    <section class="add-expense-section" aria-label="Ajouter une dépense">
+      <form id="expense-form" class="expense-form" novalidate>
+        <div class="form-group">
+          <label for="expense-label">Libellé</label>
+          <input type="text" id="expense-label" name="label" placeholder="Ex: Courses Carrefour" required maxlength="50">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="expense-amount">Montant (€)</label>
+            <input type="text" id="expense-amount" name="amount" placeholder="12,50" required inputmode="decimal" pattern="[0-9]+([.,][0-9]{1,2})?">
+          </div>
+          <div class="form-group">
+            <label for="expense-date">Date</label>
+            <input type="date" id="expense-date" name="date" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="expense-category">Catégorie</label>
+          <select id="expense-category" name="category" required>
+            <option value="">Choisir</option>
+            <option value="Courses">Courses</option>
+            <option value="Transport">Transport</option>
+            <option value="Logement">Logement</option>
+            <option value="Loisirs">Loisirs</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
+      </form>
+    </section>
+
+    <section class="expenses-list-section" aria-label="Liste des dépenses">
+      <ul id="expenses-list" class="expenses-list" role="list"></ul>
+      <p id="empty-message" class="empty-message hidden">Aucune dépense pour ce filtre</p>
+    </section>
+  </main>
+
+  <dialog id="delete-dialog" class="delete-dialog" role="alertdialog" aria-labelledby="delete-dialog-title">
+    <div class="dialog-content">
+      <h2 id="delete-dialog-title">Supprimer cette dépense ?</h2>
+      <p id="delete-dialog-message"></p>
+      <div class="dialog-actions">
+        <button type="button" id="delete-cancel" class="btn btn-secondary">Annuler</button>
+        <button type="button" id="delete-confirm" class="btn btn-danger">Supprimer</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

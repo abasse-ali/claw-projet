@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tests - Suivi Dépenses</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+    h1 { color: #1f2937; }
+    .test-suite { margin-bottom: 30px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; }
+    .test-suite h2 { margin-top: 0; color: #374151; }
+    .test { padding: 10px; margin: 10px 0; border-radius: 6px; }
+    .test.pass { background: #dcfce7; border: 1px solid #86efac; }
+    .test.fail { background: #fef2f2; border: 1px solid #fca5a5; }
+    .test h3 { margin: 0 0 5px; }
+    .test .details { font-size: 0.9em; color: #6b7280; }
+    .summary { padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; }
+    .summary.pass { background: #dcfce7; color: #166534; }
+    .summary.fail { background: #fef2f2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <h1>Tests Unitaires - Suivi Dépenses</h1>
+  <div id="results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script src="app.js"></script>
+  <script>
+    // Attendre que l'API soit disponible
+    function waitForExpenseTracker() {
+      return new Promise(resolve => {
+        if (window.ExpenseTracker) {
+          resolve(window.ExpenseTracker);
+        } else {
+          window.addEventListener('load', () => {
+            setTimeout(() => resolve(window.ExpenseTracker), 100);
+          });
+        }
+      });
+    }
+
+    // Utilitaires de test
+    const results = [];
+    function assertEqual(actual, expected, message) {
+      const pass = JSON.stringify(actual) === JSON.stringify(expected);
+      results.push({ pass, message, actual, expected });
+      return pass;
+    }
+
+    function assertTrue(condition, message) {
+      const pass = !!condition;
+      results.push({ pass, message, actual: condition, expected: true });
+      return pass;
+    }
+
+    function assertFalse(condition, message) {
+      const pass = !condition;
+      results.push({ pass, message, actual: condition, expected: false });
+      return pass;
+    }
+
+    function runTest(name, fn) {
+      try {
+        fn();
+        console.log(`✓ ${name}`);
+      } catch (e) {
+        results.push({ pass: false, message: name, error: e.message });
+        console.error(`✗ ${name}:`, e);
+      }
+    }
+
+    function runSuite(name, tests) {
+      console.log(`\n=== ${name} ===`);
+      tests.forEach(({ name, fn }) => runTest(name, fn));
+    }
+
+    // ============================================================
+    // TESTS: formatCurrency
+    // ============================================================
+    runSuite('formatCurrency', [
+      {
+        name: 'formate un entier en euros',
+        fn: () => {
+          const { formatCurrency } = window.ExpenseTracker;
+          const result = formatCurrency(10);
+          // Intl.NumberFormat utilise un espace insécable (U+202F) avant le symbole
+          assertTrue(result.includes('10,00') && result.includes('€'), `10 devient ${result}`);
+        }
+      },
+      {
+        name: 'formate un nombre à 2 décimales',
+        fn: () => {
+          const { formatCurrency } = window.ExpenseTracker;
+          const result = formatCurrency(12.5);
+          assertTrue(result.includes('12,50') && result.includes('€'), `12,5 devient ${result}`);
+        }
+      },
+      {
+        name: 'formate un nombre avec plus de 2 décimales (arrondi)',
+        fn: () => {
+          const { formatCurrency } = window.ExpenseTracker;
+          const result = formatCurrency(12.555);
+          assertTrue(result.includes('12,56') && result.includes('€'), `12,555 devient ${result}`);
+        }
+      },
+      {
+        name: 'formate zéro',
+        fn: () => {
+          const { formatCurrency } = window.ExpenseTracker;
+          const result = formatCurrency(0);
+          assertTrue(result.includes('0,00') && result.includes('€'), `0 devient ${result}`);
+        }
+      },
+      {
+        name: "formate un montant avec des centimes",
+        fn: () => {
+          const { formatCurrency } = window.ExpenseTracker;
+          const result = formatCurrency(29.99);
+          assertTrue(result.includes('29,99') && result.includes('€'), `29,99 devient ${result}`);
+        }
+      }
+    ]);
+
+    // ============================================================
+    // TESTS: formatDate
+    // ============================================================
+    runSuite('formatDate', [
+      {
+        name: "formate une date ISO en format français",
+        fn: () => {
+          const { formatDate } = window.ExpenseTracker;
+          assertEqual(formatDate('2026-10-29'), '29/10/2026', '2026-10-29 devient 29/10/2026');
+        }
+      },
+      {
+        name: "formate le premier jour du mois",
+        fn: () => {
+          const { formatDate } = window.ExpenseTracker;
+          assertEqual(formatDate('2026-01-01'), '01/01/2026', '2026-01-01 devient 01/01/2026');
+        }
+      },
+      {
+        name: "formate le dernier jour de l'année",
+        fn: () => {
+          const { formatDate } = window.ExpenseTracker;
+          assertEqual(formatDate('2026-12-31'), '31/12/2026', '2026-12-31 devient 31/12/2026');
+        }
+      }
+    ]);
+
+    // ============================================================
+    // TESTS: parseAmount
+    // ============================================================
+    runSuite('parseAmount', [
+      {
+        name: "parse un nombre français avec virgule",
+        fn: () => {
+          const { parseAmount } = window.ExpenseTracker;
+          assertEqual(parseAmount('12,50'), 12.5, '"12,50" devient 12,5');
+        }
+      },
+      {
+        name: "parse un entier",
+        fn: () => {
+          const { parseAmount } = window.ExpenseTracker;
+          assertEqual(parseAmount('10'), 10, '"10" devient 10');
+        }
+      },
+      {
+        name: "retourne 0 pour une chaîne invalide",
+        fn: () => {
+          const { parseAmount } = window.ExpenseTracker;
+          assertEqual(parseAmount('abc'), 0, '"abc" devient 0');
+        }
+      },
+      {
+        name: "retourne 0 pour une chaîne vide",
+        fn: () => {
+          const { parseAmount } = window.ExpenseTracker;
+          assertEqual(parseAmount(''), 0, '"" devient 0');
+        }
+      }
+    ]);
+
+    // ============================================================
+    // TESTS: filterExpensesByCategory
+    // ============================================================
+    runSuite('filterExpensesByCategory', [
+      {
+        name: "retourne toutes les dépenses si pas de filtre",
+        fn: () => {
+          const { filterExpensesByCategory } = window.ExpenseTracker;
+          const expenses = [
+            { id: '1', category: 'Courses', amount: 10 },
+            { id: '2', category: 'Transport', amount: 20 }
+          ];
+          const result = filterExpensesByCategory(expenses, '');
+          assertEqual(result.length, 2, '2 dépenses retournées');
+        }
+      },
+      {
+        name: "filtre par catégorie Courses",
+        fn: () => {
+          const { filterExpensesByCategory } = window.ExpenseTracker;
+          const expenses = [
+            { id: '1', category: 'Courses', amount: 10 },
+            { id: '2', category: 'Transport', amount: 20 },
+            { id: '3', category: 'Courses', amount: 15 }
+          ];
+          const result = filterExpensesByCategory(expenses, 'Courses');
+          assertEqual(result.length, 2, '2 dépenses Courses');
+          assertTrue(result.every(e => e.category === 'Courses'), 'Toutes sont Courses');
+        }
+      },
+      {
+        name: "retourne tableau vide si catégorie inexistante",
+        fn: () => {
+          const { filterExpensesByCategory } = window.ExpenseTracker;
+          const expenses = [
+            { id: '1', category: 'Courses', amount: 10 }
+          ];
+          const result = filterExpensesByCategory(expenses, 'Loisirs');
+          assertEqual(result.length, 0, '0 dépense Loisirs');
+        }
+      },
+      {
+        name: "ne modifie pas le tableau original",
+        fn: () => {
+          const { filterExpensesByCategory } = window.ExpenseTracker;
+          const expenses = [
+            { id: '1', category: 'Courses', amount: 10 }
+          ];
+          filterExpensesByCategory(expenses, 'Transport');
+          assertEqual(expenses.length, 1, 'Original inchangé');
+        }
+      }
+    ]);
+
+    // ============================================================
+    // TESTS: calculateMonthlyTotal
+    // ============================================================
+    runSuite('calculateMonthlyTotal', [
+      {
+        name: "calcule le total du mois en cours seulement",
+        fn: () => {
+          const { calculateMonthlyTotal } = window.ExpenseTracker;
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+
+          // Date du mois en cours
+          const thisMonthDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-15`;
+          // Mois précédent
+          const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          const prevMonthDate = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-15`;
+
+          const expenses = [
+            { id: '1', date: thisMonthDate, amount: 50 },
+            { id: '2', date: thisMonthDate, amount: 30 },
+            { id: '3', date: prevMonthDate, amount: 100 }
+          ];
+
+          const total = calculateMonthlyTotal(expenses);
+          assertEqual(total, 80, 'Total du mois en cours = 80 (50+30)');
+        }
+      },
+      {
+        name: "retourne 0 si aucune dépense ce mois",
+        fn: () => {
+          const { calculateMonthlyTotal } = window.ExpenseTracker;
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+
+          // Mois précédent
+          const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+          const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+          const prevMonthDate = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-15`;
+
+          const expenses = [
+            { id: '1', date: prevMonthDate, amount: 100 }
+          ];
+
+          const total = calculateMonthlyTotal(expenses);
+          assertEqual(total, 0, 'Total = 0');
+        }
+      },
+      {
+        name: "retourne 0 pour tableau vide",
+        fn: () => {
+          const { calculateMonthlyTotal } = window.ExpenseTracker;
+          const total = calculateMonthlyTotal([]);
+          assertEqual(total, 0, 'Total tableau vide = 0');
+        }
+      },
+      {
+        name: "somme correcte avec plusieurs dépenses même mois",
+        fn: () => {
+          const { calculateMonthlyTotal } = window.ExpenseTracker;
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+          const thisMonthDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-15`;
+
+          const expenses = [
+            { id: '1', date: thisMonthDate, amount: 12.50 },
+            { id: '2', date: thisMonthDate, amount: 25.75 },
+            { id: '3', date: thisMonthDate, amount: 8.99 }
+          ];
+
+          const total = calculateMonthlyTotal(expenses);
+          assertEqual(total, 47.24, 'Total = 47,24');
+        }
+      }
+    ]);
+
+    // ============================================================
+    // TESTS: sortExpensesByDateDesc
+    // ============================================================
+    runSuite('sortExpensesByDateDesc', [
+      {
+        name: "trie les dépenses du plus récent au plus ancien",
+        fn: () => {
+          const { sortExpensesByDateDesc } = window.ExpenseTracker;
+          const expenses = [
+            { id: '1', date: '2026-10-01', amount: 10 },
+            { id: '2', date: '2026-10-29', amount: 20 },
+            { id: '3', date: '2026-10-15', amount: 30 }
+          ];
+          const sorted = sortExpensesByDateDesc(expenses);
+          assertEqual(sorted[0].date, '2026-10-29', 'Premier = 29/10');
+          assertEqual(sorted[1].date, '2026-10-15', 'Deuxième = 15/10');
+          assertEqual(sorted[2].date, '2026-10-01', 'Troisième = 01/10');
+        }
+      },
+      {
+        name: "ne modifie pas le tableau original",
+        fn: () => {
+          const { sortExpensesByDateDesc } = window.ExpenseTracker;
+          const expenses = [
+            { id: '1', date: '2026-10-01', amount: 10 },
+            { id: '2', date: '2026-10-29', amount: 20 }
+          ];
+          sortExpensesByDateDesc(expenses);
+          assertEqual(expenses[0].date, '2026-10-01', 'Original inchangé');
+        }
+      }
+    ]);
+
+    // ============================================================
+    // TESTS: generateId
+    // ============================================================
+    runSuite('generateId', [
+      {
+        name: "génère un ID unique non vide",
+        fn: () => {
+          const { generateId } = window.ExpenseTracker;
+          const id1 = generateId();
+          const id2 = generateId();
+          assertTrue(typeof id1 === 'string' && id1.length > 0, 'ID1 est string non vide');
+          assertTrue(typeof id2 === 'string' && id2.length > 0, 'ID2 est string non vide');
+          assertFalse(id1 === id2, 'IDs différents');
+        }
+      }
+    ]);
+
+    // Affichage des résultats
+    function renderResults() {
+      const container = document.getElementById('results');
+      const summary = document.getElementById('summary');
+
+      container.innerHTML = '';
+
+      let passed = 0;
+      let failed = 0;
+
+      results.forEach(r => {
+        if (r.pass) passed++;
+        else failed++;
+
+        const testDiv = document.createElement('div');
+        testDiv.className = `test ${r.pass ? 'pass' : 'fail'}`;
+
+        const h3 = document.createElement('h3');
+        h3.textContent = `${r.pass ? '✓' : '✗'} ${r.message}`;
+        testDiv.appendChild(h3);
+
+        if (!r.pass) {
+          const detailsDiv = document.createElement('div');
+          detailsDiv.className = 'details';
+          detailsDiv.textContent = r.error ? `Erreur: ${r.error}` : `Attendu: ${JSON.stringify(r.expected)}, Reçu: ${JSON.stringify(r.actual)}`;
+          testDiv.appendChild(detailsDiv);
+        }
+
+        container.appendChild(testDiv);
+      });
+
+      const total = passed + failed;
+      summary.className = `summary ${failed === 0 ? 'pass' : 'fail'}`;
+      summary.textContent = `${passed}/${total} tests réussis ${failed > 0 ? `(${failed} échoué${failed > 1 ? 's' : ''})` : ''}`;
+    }
+
+    // Exécuter après chargement
+    waitForExpenseTracker().then(() => {
+      renderResults();
+    });
+  </script>
+</body>
+</html>
