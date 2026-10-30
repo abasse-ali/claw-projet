@@ -9,6 +9,7 @@ import { money, monthOf, parseAmount, today } from "./format";
 import { Icon, type LucideIcon } from "./icons";
 import { IconButton } from "./layout";
 import { useEntries, type Entry } from "./store";
+import { useCategorizeLearn } from "./categorize-learn";
 import { toast } from "./toast";
 
 /** Ouvre ou ferme le <dialog> avec `open` ; Échap et un appui sur le fond appellent `onClose`. */
@@ -146,10 +147,16 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
     close();
     if (entry) {
       update(entry.id, fields);
+      // Apprendre la correction si la catégorie a changé
+      if (entry.category !== category) {
+        useCategorizeLearn.getState().learn(entry.label, category);
+      }
       toast("Opération modifiée");
       return;
     }
     const added = add(fields);
+    // Apprendre pour les nouvelles opérations
+    useCategorizeLearn.getState().learn(label, category);
     // Une opération d'un autre mois : l'appli montre ce mois.
     if (monthOf(added.date) !== month) setMonth(monthOf(added.date));
     toast(`${kind === "in" ? kinds.in : kinds.out} de ${money(value)} enregistrée`, {

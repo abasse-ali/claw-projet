@@ -48,7 +48,7 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
 /** Des filtres en pastilles qui défilent (catégories) ; la valeur "" : tout. */
 export function Chips<T extends string>({ options, value, onChange, label }: { options: Option<T>[]; value: T; onChange: (value: T) => void; label: string }) {
   return (
-    <div className="chips" role="group" aria-label={label}>
+    <div className="chips filter-chips" role="group" aria-label={label}>
       {options.map((option) => (
         <button key={option.value} className="chip" type="button" aria-pressed={option.value === value} onClick={() => onChange(option.value)}>
           {option.label}

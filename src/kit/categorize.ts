@@ -1,5 +1,7 @@
 // Catégorisation automatique des opérations d'après leur libellé.
 
+import { useCategorizeLearn } from "./categorize-learn";
+
 /** Normalise une chaîne : minuscules, sans accents, sans espaces, & devient et. */
 function norm(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/&/g, "et").replace(/\s+/g, "");
@@ -24,8 +26,15 @@ export const CATEGORY_RULES: { category: string; keywords: string[] }[] = [
 export const DEFAULT_CATEGORY = "Autre";
 
 /** Trouve la catégorie d'un libellé.
- *  Retourne la catégorie correspondante ou "Autre". */
+ *  Retourne la catégorie correspondante ou "Autre".
+ *  Priorité : 1. Apprentissage utilisateur (correspondance exacte), 2. Règles automatiques, 3. Apprentissage partiel, 4. "Autre".
+ */
 export function categorize(label: string): string {
+  // 1. Vérifier l'apprentissage exact
+  const learnedExact = useCategorizeLearn.getState().findLearned(label);
+  if (learnedExact) return learnedExact;
+
+  // 2. Règles automatiques
   const lower = norm(label);
   for (const rule of CATEGORY_RULES) {
     for (const keyword of rule.keywords) {
@@ -34,6 +43,13 @@ export function categorize(label: string): string {
       }
     }
   }
+
+  // 3. Apprentissage partiel (suggestions)
+  const suggestions = useCategorizeLearn.getState().suggestLearned(label, 1);
+  if (suggestions.length > 0) {
+    return suggestions[0].category;
+  }
+
   return DEFAULT_CATEGORY;
 }
 

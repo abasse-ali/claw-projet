@@ -4,6 +4,7 @@
 import { parseAmount, parseBankAmount, parseBankDate, today } from "./format";
 import { categorize } from "./categorize";
 import { STORE_KEY, useEntries, type Entry } from "./store";
+import { useCategorizeLearn } from "./categorize-learn";
 import { toast } from "./toast";
 
 const cell = (value: unknown) => {
@@ -57,7 +58,7 @@ function duplicateKey(entry: Entry): string {
 }
 
 const names: Record<string, keyof Entry> = { date: "date", libelle: "label", label: "label", montant: "amount", amount: "amount", categorie: "category", category: "category", id: "id" };
-const plain = (text: string) => text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+const plain = (text: string) => text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
 /** Reprend un relevé bancaire (fichier .csv) ; rend le nombre d'opérations importées (nouvelles). */
 export async function importBankCsv(file: File): Promise<number> {
@@ -70,16 +71,19 @@ export async function importBankCsv(file: File): Promise<number> {
     .map((line): Entry => {
       const date = parseBankDate(line.date);
       const amount = parseBankAmount(line.amount);
-      // Montant négatif = dépense (format banque)
-      const signedAmount = amount < 0 ? amount : -Math.abs(amount);
-      // Si le montant est positif dans le fichier, on suppose que c'est une rentrée
-      // Mais le format bancaire standard a les dépenses en négatif
-      const finalAmount = line.montant?.startsWith("-") ? -Math.abs(amount) : amount;
+      // Format bancaire standard : montants négatifs = dépenses, positifs = rentrées
+      // On garde le signe tel quel
+      const finalAmount = Math.round(amount * 100) / 100;
+      const category = line.category || categorize(line.label);
+      // Apprendre de l'import pour les futures suggestions
+      if (!line.category) {
+        useCategorizeLearn.getState().learn(line.label, category);
+      }
       return {
         id: line.id || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
         label: line.label,
-        amount: Math.round(finalAmount * 100) / 100,
-        category: line.category || categorize(line.label),
+        amount: finalAmount,
+        category,
         date: date || today(),
       };
     });

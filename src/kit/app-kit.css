@@ -397,6 +397,50 @@ body:has(dialog[open]) { overflow: hidden; }
 .toast.is-error { background: var(--error); color: #fff; }
 .toast.is-leaving { opacity: 0; transform: translateY(8px); transition: opacity 0.2s, transform 0.2s; }
 
+/* Recherche : champ assez haut pour le doigt */
+.search-input { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--field); color: var(--ink); font-size: 1rem; }
+.search-input:focus-within { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.search-input__icon { flex: none; color: var(--faint); width: 20px; height: 20px; }
+.search-input input { flex: 1; width: 100%; min-width: 0; min-height: 48px; padding: 0; border: 0; background: transparent; color: var(--ink); font-size: 1rem; }
+.search-input input:focus { outline: none; }
+.search-input__clear { flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--surface-2); color: var(--muted); }
+.search-input__clear:hover { background: var(--error-soft); color: var(--error); }
+
+/* Puces de filtre */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.filter-chips .chip { min-height: 44px; }
+
+/* Budget form : champs assez hauts pour le doigt */
+.budget-form { display: grid; gap: 10px; }
+.budget-form .field { gap: 6px; }
+.budget-form .field__label { color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+.budget-form .field__input,
+.budget-form select.field__input,
+.budget-form input.field__input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--field);
+  color: var(--ink);
+  font-size: 1rem;
+}
+.budget-form .field__input:focus,
+.budget-form select.field__input:focus,
+.budget-form input.field__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.budget-form .field select {
+  appearance: none;
+  padding-right: 40px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 21px, calc(100% - 15px) 21px;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
 @keyframes kit-in { from { opacity: 0; transform: translateY(6px); } }
 @keyframes kit-pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } }
 @keyframes kit-up { from { transform: translateY(100%); } }
