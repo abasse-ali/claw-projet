@@ -127,7 +127,8 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
     if (!open) return;
     const value = entry ? Math.abs(entry.amount) : 0;
     setKind(entry && entry.amount > 0 ? "in" : "out");
-    setAmount(entry ? (Number.isInteger(value) ? String(value) : value.toFixed(2).replace(".", ",")) : "");
+    // Toujours afficher 2 décimales au format français (ex: 558,00)
+    setAmount(entry ? value.toFixed(2).replace(".", ",") : "");
     setCategory(entry?.category || categories[0]?.name || "");
     setLabel(entry?.label ?? "");
     setDate(entry?.date ?? today());
@@ -209,7 +210,8 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
               onClick={() => {
                 const current = parseAmount(amount);
                 const next = (Number.isFinite(current) ? current : 0) + step;
-                setAmount(String(Math.round(next * 100) / 100).replace(".", ","));
+                // Toujours 2 décimales au format français
+                setAmount(next.toFixed(2).replace(".", ","));
                 setInvalid(false);
               }}
             >
