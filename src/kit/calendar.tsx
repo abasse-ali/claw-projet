@@ -206,17 +206,14 @@ export function MonthCalendar({ month: initialMonth }: { month?: string }) {
         <div className="calendar__summary-item calendar__summary-item--income">
           <Icon icon={Plus} size={16} />
           <span>Rentrées</span>
-          <b>{money(totalIncome)}</b>
         </div>
         <div className="calendar__summary-item calendar__summary-item--spending">
           <Icon icon={Minus} size={16} />
           <span>Dépenses</span>
-          <b>{money(totalSpending)}</b>
         </div>
         <div className="calendar__summary-item calendar__summary-item--balance">
           <Icon icon={Calendar} size={16} />
           <span>Solde</span>
-          <b>{signed(totalIncome - totalSpending)}</b>
         </div>
       </div>
     </div>
