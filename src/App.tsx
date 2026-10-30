@@ -15,7 +15,6 @@ import {
   Segmented,
   Chips,
   TextField,
-  MoneyInput,
   Button,
   ButtonRow,
   Sheet,
@@ -181,7 +180,8 @@ function ExpensesScreen() {
   const deleteExpense = useDeleteExpense();
 
   const [label, setLabel] = useState("");
-  const [amount, setAmount] = useState<number>(0);
+  const [amountCents, setAmountCents] = useState<number>(0);
+  const [amountText, setAmountText] = useState("");
   const [paidBy, setPaidBy] = useState<string>("");
   const [forWhom, setForWhom] = useState<string[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -190,7 +190,8 @@ function ExpensesScreen() {
   // Par défaut : tous les participants
   const resetForm = () => {
     setLabel("");
-    setAmount(0);
+    setAmountCents(0);
+    setAmountText("");
     setPaidBy(participants[0]?.id || "");
     setForWhom(participants.map((p) => p.id));
     setEditId(null);
@@ -210,21 +211,24 @@ function ExpensesScreen() {
   const handleOpenEdit = (expense: Expense) => {
     setEditId(expense.id);
     setLabel(expense.label);
-    setAmount(expense.amountCents / 100);
+    setAmountCents(expense.amountCents);
+    setAmountText(formatCents(expense.amountCents));
     setPaidBy(expense.paidBy);
     setForWhom(expense.forWhom);
     setShowSheet(true);
   };
 
-  const handleSubmit = () => {
-    if (!label.trim() || amount <= 0 || !paidBy || forWhom.length === 0) {
-      toast("Remplissez tous les champs", { tone: "error" });
-      return;
+  const handleAmountChange = (text: string) => {
+    setAmountText(text);
+    const cents = parseCents(text);
+    if (Number.isFinite(cents) && cents >= 0) {
+      setAmountCents(cents);
     }
+  };
 
-    const amountCents = Math.round(amount * 100);
-    if (!Number.isFinite(amountCents) || amountCents <= 0) {
-      toast("Montant invalide", { tone: "error" });
+  const handleSubmit = () => {
+    if (!label.trim() || amountCents <= 0 || !paidBy || forWhom.length === 0) {
+      toast("Remplissez tous les champs", { tone: "error" });
       return;
     }
 
@@ -291,7 +295,14 @@ function ExpensesScreen() {
           onChange={setLabel}
           placeholder="Ex: Courses, Restaurant..."
         />
-        <MoneyInput label="Montant" value={amount} onChange={setAmount} />
+        <TextField
+          label="Montant"
+          value={amountText}
+          onChange={handleAmountChange}
+          placeholder="Ex: 12,50 ou 12.50"
+          type="text"
+          inputMode="decimal"
+        />
         <Card title="Payé par">
           <Chips
             options={participantOptions}

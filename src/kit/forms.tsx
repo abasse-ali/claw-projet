@@ -66,15 +66,16 @@ type TextFieldProps = {
   placeholder?: string;
   help?: string;
   error?: string;
+  inputMode?: "decimal" | "email" | "none" | "numeric" | "search" | "tel" | "text" | "url";
 };
 
 /** Un champ avec son nom au-dessus, une aide et une erreur dessous. */
-export function TextField({ label, value, onChange, type = "text", placeholder, help, error }: TextFieldProps) {
+export function TextField({ label, value, onChange, type = "text", placeholder, help, error, inputMode }: TextFieldProps) {
   const id = useId();
   return (
     <div className={`field${error ? " is-invalid" : ""}`}>
       <label htmlFor={id}>{label}</label>
-      <input id={id} type={type} value={value} placeholder={placeholder} autoComplete="off" aria-invalid={Boolean(error)} onChange={(event) => onChange(event.target.value)} />
+      <input id={id} type={type} value={value} placeholder={placeholder} autoComplete="off" aria-invalid={Boolean(error)} onChange={(event) => onChange(event.target.value)} inputMode={inputMode} />
       {help && <p className="field__help">{help}</p>}
       {error && <p className="field__error">{error}</p>}
     </div>
