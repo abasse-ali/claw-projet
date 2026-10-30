@@ -688,16 +688,6 @@ export default function App() {
     setEditingParticipant(null);
   };
 
-  const handleParticipantRemove = (participant: Participant) => {
-    const result = removeParticipant(participant.id);
-    if (result.success) {
-      toast("Participant supprimé");
-    } else if (result.error) {
-      toast(result.error, { tone: "error" });
-    }
-    setParticipantSheetOpen(false);
-    setEditingParticipant(null);
-  };
 
   const handleExpenseSubmit = (data: { label: string; amount: number; paidBy: string; sharedWith: string[] }) => {
     if (editingExpense) {
@@ -711,20 +701,12 @@ export default function App() {
     setEditingExpense(null);
   };
 
-  const handleExpenseRemove = (expense: Expense) => {
-    const undo = removeExpense(expense.id);
-    toast("Dépense supprimée", { action: { label: "Annuler", run: undo } });
-  };
 
   const openAddParticipant = () => {
     setEditingParticipant(null);
     setParticipantSheetOpen(true);
   };
 
-  const openEditParticipant = (participant: Participant) => {
-    setEditingParticipant(participant);
-    setParticipantSheetOpen(true);
-  };
 
   const openAddExpense = () => {
     if (participants.length === 0) {
@@ -735,10 +717,6 @@ export default function App() {
     setExpenseSheetOpen(true);
   };
 
-  const openEditExpense = (expense: Expense) => {
-    setEditingExpense(expense);
-    setExpenseSheetOpen(true);
-  };
 
   return (
     <>
