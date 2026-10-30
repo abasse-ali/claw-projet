@@ -492,12 +492,12 @@ body:has(dialog[open]) { overflow: hidden; }
 .calendar__detail-amount { flex: none; font-weight: 700; font-variant-numeric: tabular-nums; }
 .calendar__detail-empty { color: var(--muted); text-align: center; padding: 8px; }
 .calendar__summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; min-width: 0; }
-.calendar__summary-item { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px; border-radius: 12px; font-size: 0.8125rem; min-width: 0; }
+.calendar__summary-item { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border-radius: 12px; font-size: 0.8125rem; min-width: 0; }
 .calendar__summary-item--income { background: var(--income-soft); color: var(--income); }
 .calendar__summary-item--spending { background: var(--error-soft); color: var(--error); }
 .calendar__summary-item--balance { background: var(--accent-soft); color: var(--accent-ink); }
-.calendar__summary-item > span { font-weight: 500; }
-.calendar__summary-item > b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.calendar__summary-item > span { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendar__summary-item > b { font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
