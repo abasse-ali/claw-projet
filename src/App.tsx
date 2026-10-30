@@ -43,7 +43,8 @@ import {
   type Category,
   type NewEntry,
 } from "./kit";
-import { ArrowDownCircle, ArrowRightLeft, Bus, ChartColumn, Download, Gamepad2, HeartPulse, Home, List as ListIcon, Receipt, Search as SearchIcon, Settings as SettingsIcon, ShoppingBag, ShoppingCart, Tag, Trash2, Upload, Utensils, Wallet, X, AlertTriangle, AlertCircle } from "lucide-react";
+import { ArrowDownCircle, ArrowRightLeft, Bus, Calendar, ChartColumn, Download, Gamepad2, HeartPulse, Home, List as ListIcon, Receipt, Search as SearchIcon, Settings as SettingsIcon, ShoppingBag, ShoppingCart, Tag, Trash2, Upload, Utensils, Wallet, X, AlertTriangle, AlertCircle } from "lucide-react";
+import { MonthCalendar } from "./kit";
 
 const SEED: NewEntry[] = [];
 seedOnce(SEED);
@@ -250,6 +251,9 @@ export default function App() {
             ) : (
               <p className="text-muted text-center py-4">Aucune dépense ce mois-ci.</p>
             )}
+          </Card>
+          <Card title="Calendrier" level={3}>
+            <MonthCalendar month={month} />
           </Card>
         </Screen>
 
