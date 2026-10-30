@@ -23,6 +23,7 @@ import {
   money,
   openEntrySheet,
   toast,
+  useScreen,
 } from "./kit";
 import { useTripStore, computeBalances, computeSettlements, type Participant, type Expense, type Settlement } from "./trip-store";
 
@@ -44,6 +45,7 @@ export default function App() {
   const updateExpense = useTripStore((state) => state.updateExpense);
   const removeExpense = useTripStore((state) => state.removeExpense);
   const clearAll = useTripStore((state) => state.clearAll);
+  const [activeScreen] = useScreen();
 
   const balances = useMemo(() => computeBalances(participants, expenses), [participants, expenses]);
   const settlements = useMemo(() => computeSettlements(participants, balances), [participants, balances]);
@@ -148,7 +150,7 @@ export default function App() {
 
     const expense = {
       label: expenseLabel.trim() || "Sans nom",
-      amount: Math.round(amount * 100), // convertir en centimes
+      amount: amount, // parseAmount renvoie déjà des centimes
       paidBy: expensePaidBy,
       forWhom: concerned,
       date: expenseDate,
@@ -186,13 +188,47 @@ export default function App() {
   const getParticipantName = (id: string) => participants.find(p => p.id === id)?.name || "?";
   const formatCents = (cents: number) => money(cents / 100);
   const parseAmount = (input: string): number => {
-    const text = String(input ?? "").replace(/€|eur(os?)?/gi, "");
-    const digits = text.replace(/[^\d,.+-]/g, "");
-    const last = Math.max(digits.lastIndexOf(","), digits.lastIndexOf("."));
-    const decimals = last >= 0 && /^\d{1,2}$/.test(digits.slice(last + 1));
-    const whole = (decimals ? digits.slice(0, last) : digits).replace(/[,.]/g, "");
-    const value = Number(decimals ? `${whole}.${digits.slice(last + 1)}` : whole);
-    return digits && Number.isFinite(value) ? value : NaN;
+    const text = String(input ?? "").replace(/€|eur(os?)?/gi, "").trim();
+    if (!text) return NaN;
+    // Gérer les virgules et points comme séparateurs décimaux
+    const hasComma = text.includes(",");
+    const hasDot = text.includes(".");
+    let clean: string;
+    if (hasComma && hasDot) {
+      // Les deux présents : le dernier est le séparateur décimal
+      const lastComma = text.lastIndexOf(",");
+      const lastDot = text.lastIndexOf(".");
+      if (lastComma > lastDot) {
+        // Virgule = décimal, point = milliers
+        clean = text.replace(/\./g, "").replace(",", ".");
+      } else {
+        // Point = décimal, virgule = milliers
+        clean = text.replace(/,/g, "");
+      }
+    } else if (hasComma) {
+      // Seulement virgule : si 1-2 chiffres après = décimal, sinon milliers
+      const parts = text.split(",");
+      if (parts.length === 2 && parts[1].length <= 2) {
+        clean = text.replace(",", ".");
+      } else {
+        clean = text.replace(/,/g, "");
+      }
+    } else if (hasDot) {
+      // Seulement point : si 1-2 chiffres après = décimal, sinon milliers
+      const parts = text.split(".");
+      if (parts.length === 2 && parts[1].length <= 2) {
+        clean = text; // déjà bon
+      } else {
+        clean = text.replace(/\./g, "");
+      }
+    } else {
+      clean = text;
+    }
+    // Maintenant clean est un nombre avec point décimal ou entier
+    const value = Number(clean);
+    if (!Number.isFinite(value) || value <= 0) return NaN;
+    // Convertir en centimes : multiplier par 100 et arrondir
+    return Math.round(value * 100);
   };
 
   return (
@@ -207,10 +243,9 @@ export default function App() {
         }
         tabs={TABS}
         onAdd={() => {
-          const activeTab = window.location.hash.slice(1) || "participants";
-          if (activeTab === "depenses") {
+          if (activeScreen === "depenses") {
             onAddExpense();
-          } else if (activeTab === "participants") {
+          } else if (activeScreen === "participants") {
             onAddParticipant();
           }
         }}
@@ -354,14 +389,24 @@ export default function App() {
                       ].filter(Boolean).join(" · ")}
                       amount={-expense.amount / 100}
                       end={
-                        <Button
-                          small
-                          variant="plain"
-                          icon={Trash2}
-                          onClick={() => setConfirmRemoveExpense(expense.id)}
-                        >
-                          Supprimer
-                        </Button>
+                        <>
+                          <Button
+                            small
+                            variant="plain"
+                            icon={Trash2}
+                            onClick={() => handleEditExpense(expense)}
+                          >
+                            Modifier
+                          </Button>
+                          <Button
+                            small
+                            variant="plain"
+                            icon={Trash2}
+                            onClick={() => setConfirmRemoveExpense(expense.id)}
+                          >
+                            Supprimer
+                          </Button>
+                        </>
                       }
                     />
                   ))}
@@ -410,9 +455,11 @@ export default function App() {
                   .sort((a, b) => b.date.localeCompare(a.date))
                   .map((expense) => {
                     const concerned = expense.forWhom.length > 0 ? expense.forWhom : participants.map(p => p.id);
-                    const shareCount = concerned.length;
-                    const share = Math.floor(expense.amount / shareCount);
-                    const remainder = expense.amount % shareCount;
+                    // Utiliser computeBalances pour une seule dépense
+                    const expenseBalances = computeBalances(
+                      participants.filter(p => concerned.includes(p.id)),
+                      [expense]
+                    );
                     return (
                       <Row
                         key={expense.id}
@@ -421,9 +468,9 @@ export default function App() {
                         title={expense.label}
                         sub={
                           <>
-                            {concerned.map((pid, i) => (
+                            {concerned.map((pid) => (
                               <span key={pid} style={{ display: "block", fontSize: "12px" }}>
-                                {getParticipantName(pid)}: {formatCents(share + (i < remainder ? 1 : 0))}
+                                {getParticipantName(pid)}: {formatCents(-(expenseBalances.get(pid) || 0))}
                               </span>
                             ))}
                           </>
@@ -460,17 +507,6 @@ export default function App() {
                     tone="out"
                     title={`${getParticipantName(s.from)} → ${getParticipantName(s.to)}`}
                     amount={s.amount / 100}
-                    end={
-                      <Button
-                        small
-                        variant="plain"
-                        icon={Trash2}
-                        onClick={() => {}}
-                        disabled
-                      >
-                        Fait
-                      </Button>
-                    }
                   />
                 ))}
               </List>

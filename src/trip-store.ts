@@ -40,9 +40,9 @@ const STORE_KEY = "trip-expenses";
 let counter = 0;
 const newId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
 
-/** Normalise un prénom pour la comparaison (unicité insensible à la casse et aux espaces). */
+/** Normalise un prénom pour la comparaison (unicité insensible à la casse, aux espaces et aux formes Unicode). */
 function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
+  return name.trim().normalize("NFC").toLowerCase();
 }
 
 export const useTripStore = create<TripState>()(
@@ -85,6 +85,11 @@ export const useTripStore = create<TripState>()(
       addExpense: (expense) => {
         const newExpense = { ...expense, id: newId() };
         set({ expenses: [...get().expenses, newExpense] });
+        // Validation en debug
+        if (import.meta.env.DEV) {
+          const balances = computeBalances(get().participants, [...get().expenses, newExpense]);
+          if (!validateBalances(balances)) console.error("Balances validation failed after addExpense");
+        }
         return newExpense;
       },
       updateExpense: (id, fields) => {
@@ -93,9 +98,23 @@ export const useTripStore = create<TripState>()(
             e.id === id ? { ...e, ...fields } : e
           ),
         });
+        // Validation en debug
+        if (import.meta.env.DEV) {
+          const newExpenses = get().expenses.map((e) =>
+            e.id === id ? { ...e, ...fields } : e
+          );
+          const balances = computeBalances(get().participants, newExpenses);
+          if (!validateBalances(balances)) console.error("Balances validation failed after updateExpense");
+        }
       },
       removeExpense: (id) => {
         set({ expenses: get().expenses.filter((e) => e.id !== id) });
+        // Validation en debug
+        if (import.meta.env.DEV) {
+          const newExpenses = get().expenses.filter((e) => e.id !== id);
+          const balances = computeBalances(get().participants, newExpenses);
+          if (!validateBalances(balances)) console.error("Balances validation failed after removeExpense");
+        }
       },
       clearAll: () => {
         set({ participants: [], expenses: [] });
