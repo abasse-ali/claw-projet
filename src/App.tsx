@@ -122,7 +122,11 @@ function ParticipantsScreen() {
               style={{ border: "none", outline: "none", font: "inherit", width: "100%" }}
             />
           }
-          action={{ icon: Check, label: "Valider", onClick: () => handleSaveEdit(p.id) }}
+          action={{
+            icon: Check,
+            label: "Valider",
+            onClick: () => handleSaveEdit(p.id),
+          }}
         />
       );
     }
@@ -132,7 +136,11 @@ function ParticipantsScreen() {
         icon={UserPlus}
         tone="accent"
         title={p.firstName}
-        action={{ icon: Edit, label: "Modifier", onClick: () => handleEdit(p) }}
+        action={{
+          icon: Edit,
+          label: "Modifier",
+          onClick: () => handleEdit(p),
+        }}
       />
     );
   };
