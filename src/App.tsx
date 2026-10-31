@@ -24,6 +24,7 @@ import {
   Tile,
   Tiles,
   daysLeft,
+  daysLeftLabel,
   exportCsv,
   filterKinds,
   getAllCategories,
@@ -236,7 +237,7 @@ export default function App() {
             amount={balance}
             sub={<>Dépenses : <b>{money(spending)}</b> · Rentrées : <b>{money(income)}</b></>}
             pills={[
-              { label: "Par jour", value: money(spending / Math.max(1, daysLeft(month))), note: `${daysLeft(month)} jours restants` },
+              { label: "Par jour", value: money(spending / Math.max(1, daysLeft(month))), note: daysLeftLabel(daysLeft(month)) },
               { label: "Solde", value: money(balance), note: "ce mois-ci" },
             ]}
             progress={{
@@ -270,6 +271,48 @@ export default function App() {
             <Tile icon={Wallet} label="Rentrées" value={money(income)} note="ce mois-ci" />
             <Tile icon={Receipt} label="Opérations" value={entries.length} note="ce mois-ci" />
           </Tiles>
+          {(recurringExpenses.length > 0 || recurringIncomes.length > 0) && (
+            <Card title="Prévisionnel du mois" level={3}>
+              {recurringExpenses.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Dépenses obligatoires</h4>
+                    <b className="text-error">{money(getTotalExpenses())}</b>
+                  </div>
+                  <div className="space-y-1">
+                    {recurringExpenses.map((expense) => (
+                      <div key={expense.id} className="flex items-center justify-between text-sm py-1">
+                        <span className="truncate">{expense.label}</span>
+                        <b className="ml-3 whitespace-nowrap">{money(expense.amount)}</b>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {recurringIncomes.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Revenus réguliers</h4>
+                    <b className="text-success">{money(getTotalIncomes())}</b>
+                  </div>
+                  <div className="space-y-1">
+                    {recurringIncomes.map((income) => (
+                      <div key={income.id} className="flex items-center justify-between text-sm py-1">
+                        <span className="truncate">{income.label}</span>
+                        <b className="ml-3 whitespace-nowrap">{money(income.amount)}</b>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                <span className="font-medium">Reste estimé</span>
+                <b className={getTotalIncomes() - getTotalExpenses() >= 0 ? "text-success" : "text-error"}>
+                  {money(getTotalIncomes() - getTotalExpenses())}
+                </b>
+              </div>
+            </Card>
+          )}
           <Card title="Dernières opérations" link={{ label: "Tout voir", href: "#operations" }}>
             <EntryList limit={4} />
           </Card>
@@ -355,21 +398,23 @@ export default function App() {
           <Card title="Dépenses obligatoires mensuelles" level={3}>
             <p className="text-muted text-sm mb-3">Loyer, électricité, internet, assurances… Ces montants sont additionnés pour voir ce qui reste pour les dépenses variables.</p>
             <form onSubmit={handleExpenseSubmit} className="recurring-form mb-3">
-              <div className="field">
-                <label htmlFor="expense-label" className="field__label">Libellé</label>
-                <select
-                  id="expense-label"
-                  value={expenseLabel}
-                  onChange={(e) => setExpenseLabel(e.target.value)}
-                  className="field__input"
-                  required
-                >
-                  <option value="">Libellé…</option>
-                  {EXPENSE_LABELS.map((label) => (
-                    <option key={label} value={label}>{label}</option>
-                  ))}
-                </select>
-              </div>
+                        <div className="field">
+                          <label htmlFor="expense-label" className="field__label">Libellé</label>
+                          <input
+                            id="expense-label"
+                            list="expense-labels"
+                            value={expenseLabel}
+                            onChange={(e) => setExpenseLabel(e.target.value)}
+                            className="field__input"
+                            placeholder="Libellé…"
+                            required
+                          />
+                          <datalist id="expense-labels">
+                            {EXPENSE_LABELS.map((label) => (
+                              <option key={label} value={label} />
+                            ))}
+                          </datalist>
+                        </div>
               <div className="field">
                 <label htmlFor="expense-category" className="field__label">Catégorie</label>
                 <select
@@ -445,18 +490,20 @@ export default function App() {
             <form onSubmit={handleIncomeSubmit} className="recurring-form mb-3">
               <div className="field">
                 <label htmlFor="income-label" className="field__label">Libellé</label>
-                <select
+                <input
                   id="income-label"
+                  list="income-labels"
                   value={incomeLabel}
                   onChange={(e) => setIncomeLabel(e.target.value)}
                   className="field__input"
+                  placeholder="Libellé…"
                   required
-                >
-                  <option value="">Libellé…</option>
+                />
+                <datalist id="income-labels">
                   {INCOME_LABELS.map((label) => (
-                    <option key={label} value={label}>{label}</option>
+                    <option key={label} value={label} />
                   ))}
-                </select>
+                </datalist>
               </div>
               <div className="field">
                 <label htmlFor="income-amount" className="field__label">Montant (€)</label>

@@ -103,3 +103,8 @@ export function daysLeft(month = monthOf(today())): number {
   const current = now.getFullYear() === year && now.getMonth() + 1 === number;
   return current ? last - now.getDate() + 1 : last;
 }
+
+/** Retourne le texte pour les jours restants (singulier pour 0 et 1). */
+export function daysLeftLabel(count: number): string {
+  return `${count} jour${count > 1 ? "s" : ""} restant${count > 1 ? "s" : ""}`;
+}
