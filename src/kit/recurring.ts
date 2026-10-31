@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { syncRecurringToEntries } from "./store";
 import { monthOf, today } from "./format";
+import { getAllCategories } from "./categorize";
 
 export type RecurringExpense = {
   id: string;
@@ -168,8 +169,6 @@ export function removeIncomeAndSync(id: string): void {
 
 /** Liste des catégories pour les dépenses obligatoires (réutilise les catégories existantes). */
 export function getRecurringExpenseCategories(): { value: string; label: string }[] {
-  // Import dynamique pour éviter les cycles
-  const { getAllCategories } = require("./categorize");
   return getAllCategories().map((c: string) => ({ value: c, label: c }));
 }
 

@@ -120,6 +120,11 @@ function recurringKey(type: "expense" | "income", label: string, month: string, 
   return `recurring|${type}|${label.trim().toLowerCase()}|${month}|${Math.round(amount * 100)}`;
 }
 
+/** Arrondit un montant à 2 décimales (centimes) de façon cohérente avec clean(). */
+function roundToCents(amount: number): number {
+  return Math.round(amount * 100) / 100;
+}
+
 /** Synchronise les dépenses obligatoires et revenus réguliers du mois courant vers les opérations.
  * Crée ou met à jour les entrées avec recurring=true pour le mois affiché. 
  * Reçoit les dépenses et revenus en paramètres pour éviter les dépendances circulaires. */
@@ -150,14 +155,15 @@ export function syncRecurringToEntries(
 
   // Synchroniser les dépenses obligatoires (montants négatifs)
   for (const expense of expenses) {
-    const key = `${expense.label.trim().toLowerCase()}|${month}|${Math.round(expense.amount * 100)}`;
+    const expenseAmountRounded = roundToCents(expense.amount);
+    const key = `${expense.label.trim().toLowerCase()}|${month}|${Math.round(expenseAmountRounded * 100)}`;
     const existing = entriesByRecurringKey.get(key);
     
     if (existing) {
       // Mettre à jour si montant, catégorie ou label a changé
-      if (existing.amount !== -expense.amount || existing.category !== expense.category || existing.label !== expense.label) {
+      if (existing.amount !== -expenseAmountRounded || existing.category !== expense.category || existing.label !== expense.label) {
         update(existing.id, { 
-          amount: -expense.amount, 
+          amount: -expenseAmountRounded, 
           category: expense.category, 
           label: expense.label 
         });
@@ -168,7 +174,7 @@ export function syncRecurringToEntries(
       // Créer nouvelle entrée
       add({
         label: expense.label,
-        amount: -expense.amount,
+        amount: -expenseAmountRounded,
         category: expense.category,
         date: monthStart,
         recurring: true,
@@ -180,14 +186,15 @@ export function syncRecurringToEntries(
 
   // Synchroniser les revenus réguliers (montants positifs)
   for (const income of incomes) {
-    const key = `${income.label.trim().toLowerCase()}|${month}|${Math.round(income.amount * 100)}`;
+    const incomeAmountRounded = roundToCents(income.amount);
+    const key = `${income.label.trim().toLowerCase()}|${month}|${Math.round(incomeAmountRounded * 100)}`;
     const existing = entriesByRecurringKey.get(key);
     
     if (existing) {
       // Mettre à jour si montant ou label a changé
-      if (existing.amount !== income.amount || existing.label !== income.label) {
+      if (existing.amount !== incomeAmountRounded || existing.label !== income.label) {
         update(existing.id, { 
-          amount: income.amount, 
+          amount: incomeAmountRounded, 
           label: income.label 
         });
         // Rafraîchir l'index après mise à jour
@@ -197,7 +204,7 @@ export function syncRecurringToEntries(
       // Créer nouvelle entrée
       add({
         label: income.label,
-        amount: income.amount,
+        amount: incomeAmountRounded,
         category: "Salaire", // Catégorie par défaut pour les revenus
         date: monthStart,
         recurring: true,
@@ -210,10 +217,12 @@ export function syncRecurringToEntries(
   // Supprimer les entrées récurrentes qui ne correspondent plus à aucune dépense/revenu
   const currentKeys = new Set<string>();
   for (const expense of expenses) {
-    currentKeys.add(`${expense.label.trim().toLowerCase()}|${month}|${Math.round(expense.amount * 100)}`);
+    const expenseAmountRounded = roundToCents(expense.amount);
+    currentKeys.add(`${expense.label.trim().toLowerCase()}|${month}|${Math.round(expenseAmountRounded * 100)}`);
   }
   for (const income of incomes) {
-    currentKeys.add(`${income.label.trim().toLowerCase()}|${month}|${Math.round(income.amount * 100)}`);
+    const incomeAmountRounded = roundToCents(income.amount);
+    currentKeys.add(`${income.label.trim().toLowerCase()}|${month}|${Math.round(incomeAmountRounded * 100)}`);
   }
 
   // Rafraîchir une dernière fois pour avoir toutes les entrées à jour
