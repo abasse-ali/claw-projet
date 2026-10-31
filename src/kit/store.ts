@@ -140,11 +140,11 @@ export function syncRecurringToEntries(
         entriesByRecurringKey.set(key, entry);
       }
     }
-    return { entries: currentEntries, entriesByRecurringKey, add: state.add, update: state.update };
+    return { entries: currentEntries, entriesByRecurringKey, add: state.add, update: state.update, remove: state.remove };
   };
 
   // Index initial
-  let { entries, entriesByRecurringKey, add, update } = refreshIndex();
+  let { entries, entriesByRecurringKey, add, update, remove } = refreshIndex();
 
   const monthStart = `${month}-01`;
 
@@ -154,13 +154,15 @@ export function syncRecurringToEntries(
     const existing = entriesByRecurringKey.get(key);
     
     if (existing) {
-      // Mettre à jour si montant ou catégorie a changé
+      // Mettre à jour si montant, catégorie ou label a changé
       if (existing.amount !== -expense.amount || existing.category !== expense.category || existing.label !== expense.label) {
         update(existing.id, { 
           amount: -expense.amount, 
           category: expense.category, 
           label: expense.label 
         });
+        // Rafraîchir l'index après mise à jour (le label a pu changer)
+        ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
       }
     } else {
       // Créer nouvelle entrée
@@ -172,7 +174,7 @@ export function syncRecurringToEntries(
         recurring: true,
       });
       // Rafraîchir l'index après ajout
-      ({ entries, entriesByRecurringKey, add, update } = refreshIndex());
+      ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
     }
   }
 
@@ -188,6 +190,8 @@ export function syncRecurringToEntries(
           amount: income.amount, 
           label: income.label 
         });
+        // Rafraîchir l'index après mise à jour
+        ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
       }
     } else {
       // Créer nouvelle entrée
@@ -199,7 +203,7 @@ export function syncRecurringToEntries(
         recurring: true,
       });
       // Rafraîchir l'index après ajout
-      ({ entries, entriesByRecurringKey, add, update } = refreshIndex());
+      ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
     }
   }
 
@@ -213,17 +217,24 @@ export function syncRecurringToEntries(
   }
 
   // Rafraîchir une dernière fois pour avoir toutes les entrées à jour
-  ({ entries } = refreshIndex());
+  ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
 
+  // Collecter les IDs à supprimer pour faire un seul setState
+  const idsToRemove: string[] = [];
   for (const entry of entries) {
     if (entry.recurring && entry.date.startsWith(month)) {
       const key = `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
       if (!currentKeys.has(key)) {
-        // Cette entrée récurrente n'a plus de correspondant, la supprimer
-        useEntries.setState({ 
-          entries: entries.filter((e: Entry) => e.id !== entry.id) 
-        });
+        idsToRemove.push(entry.id);
       }
     }
+  }
+
+  // Supprimer en une seule fois
+  if (idsToRemove.length > 0) {
+    const idsToRemoveSet = new Set(idsToRemove);
+    useEntries.setState((state) => ({
+      entries: state.entries.filter((e: Entry) => !idsToRemoveSet.has(e.id))
+    }));
   }
 }

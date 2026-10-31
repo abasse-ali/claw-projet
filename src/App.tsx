@@ -31,6 +31,8 @@ import {
   getBudgetCategories,
   getFilterCategories,
   money,
+  monthOf,
+  today,
   openEntrySheet,
   persistentStore,
   pickBankCsv,
@@ -194,7 +196,15 @@ export default function App() {
 
   // Synchroniser les dépenses/revenus récurrents quand le mois change
   useEffect(() => {
-    syncRecurringToEntries(month, recurringExpenses, recurringIncomes);
+    const currentMonth = monthOf(today());
+    const { lastSyncedMonth } = useRecurring.getState();
+    
+    // Ne synchroniser que si le mois affiché a changé par rapport au dernier sync
+    // (le rechargement est géré par onRehydrateStorage)
+    if (lastSyncedMonth !== month) {
+      syncRecurringToEntries(month, recurringExpenses, recurringIncomes);
+      useRecurring.getState().setLastSyncedMonth(month);
+    }
   }, [month, recurringExpenses, recurringIncomes]);
 
   const handleSearchChange = (value: string) => {
