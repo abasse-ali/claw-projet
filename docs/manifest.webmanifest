@@ -1,0 +1,32 @@
+{
+  "background_color": "#f4f3ef",
+  "display": "standalone",
+  "icons": [
+    {
+      "sizes": "any",
+      "src": "icon.svg",
+      "type": "image/svg+xml"
+    },
+    {
+      "sizes": "192x192",
+      "src": "icon-192.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "icon-512.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "icon-maskable-512.png",
+      "type": "image/png"
+    }
+  ],
+  "name": "Mon appli",
+  "scope": "./",
+  "short_name": "Appli",
+  "start_url": "./",
+  "theme_color": "#5b4bd6"
+}

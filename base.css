@@ -1,0 +1,50 @@
+/* base.css : système de design écrit par le modèle de conception de Claw */
+:root {
+  color-scheme: light;
+  --accent: #047857;
+  --hero-1: #064E3B;
+  --hero-2: #047857;
+  --hero-3: #059669;
+  --paper: #F8F9FA;
+  --surface: #FFFFFF;
+  --ink: #111815;
+  --muted: #526058;
+  --line: #E2E8E4;
+  --income: #047857;
+  --error: #DC2626;
+  --warn: #D97706;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --accent: #10B981;
+    --hero-1: #064E3B;
+    --hero-2: #047857;
+    --hero-3: #059669;
+    --paper: #0F1412;
+    --surface: #18201C;
+    --ink: #F0F4F2;
+    --muted: #94A39A;
+    --line: #26322B;
+    --income: #10B981;
+    --error: #EF4444;
+    --warn: #F59E0B;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --accent: #10B981;
+  --hero-1: #064E3B;
+  --hero-2: #047857;
+  --hero-3: #059669;
+  --paper: #0F1412;
+  --surface: #18201C;
+  --ink: #F0F4F2;
+  --muted: #94A39A;
+  --line: #26322B;
+  --income: #10B981;
+  --error: #EF4444;
+  --warn: #F59E0B;
+}
