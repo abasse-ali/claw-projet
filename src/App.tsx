@@ -42,6 +42,13 @@ import {
   useMonthTotals,
   type Category,
   type NewEntry,
+  // Recurring
+  useRecurring,
+  getRecurringExpenseCategories,
+  INCOME_LABELS,
+  EXPENSE_LABELS,
+  type RecurringExpense,
+  type RecurringIncome,
 } from "./kit";
 import { ArrowDownCircle, ArrowRightLeft, Bus, Calendar, ChartColumn, Download, Gamepad2, HeartPulse, Home, List as ListIcon, Receipt, Search as SearchIcon, Settings as SettingsIcon, ShoppingBag, ShoppingCart, Tag, Trash2, Upload, Utensils, Wallet, X, AlertTriangle, AlertCircle } from "lucide-react";
 import { MonthCalendar } from "./kit";
@@ -86,6 +93,89 @@ export default function App() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [budgetCategory, setBudgetCategory] = useState("");
   const [budgetAmount, setBudgetAmount] = useState("");
+
+  // Recurring expenses
+  const recurringExpenses = useRecurring((state) => state.expenses);
+  const recurringIncomes = useRecurring((state) => state.incomes);
+  const addExpense = useRecurring((state) => state.addExpense);
+  const updateExpense = useRecurring((state) => state.updateExpense);
+  const removeExpense = useRecurring((state) => state.removeExpense);
+  const addIncome = useRecurring((state) => state.addIncome);
+  const updateIncome = useRecurring((state) => state.updateIncome);
+  const removeIncome = useRecurring((state) => state.removeIncome);
+  const getTotalExpenses = useRecurring((state) => state.getTotalExpenses);
+  const getTotalIncomes = useRecurring((state) => state.getTotalIncomes);
+
+  const [expenseLabel, setExpenseLabel] = useState("");
+  const [expenseCategory, setExpenseCategory] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+
+  const [incomeLabel, setIncomeLabel] = useState("");
+  const [incomeAmount, setIncomeAmount] = useState("");
+  const [editingIncomeId, setEditingIncomeId] = useState<string | null>(null);
+
+  const handleExpenseSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (expenseLabel && expenseCategory && expenseAmount) {
+      const amount = parseFloat(expenseAmount.replace(",", "."));
+      if (amount > 0) {
+        if (editingExpenseId) {
+          updateExpense(editingExpenseId, { label: expenseLabel, category: expenseCategory, amount });
+          toast(`Dépense obligatoire modifiée`);
+        } else {
+          addExpense({ label: expenseLabel, category: expenseCategory, amount });
+          toast(`Dépense obligatoire ajoutée`);
+        }
+        setExpenseLabel("");
+        setExpenseCategory("");
+        setExpenseAmount("");
+        setEditingExpenseId(null);
+      }
+    }
+  };
+
+  const handleExpenseEdit = (expense: RecurringExpense) => {
+    setExpenseLabel(expense.label);
+    setExpenseCategory(expense.category);
+    setExpenseAmount(String(expense.amount));
+    setEditingExpenseId(expense.id);
+  };
+
+  const handleExpenseRemove = (id: string) => {
+    removeExpense(id);
+    toast(`Dépense obligatoire supprimée`);
+  };
+
+  const handleIncomeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (incomeLabel && incomeAmount) {
+      const amount = parseFloat(incomeAmount.replace(",", "."));
+      if (amount > 0) {
+        if (editingIncomeId) {
+          updateIncome(editingIncomeId, { label: incomeLabel, amount });
+          toast(`Revenu régulier modifié`);
+        } else {
+          addIncome({ label: incomeLabel, amount });
+          toast(`Revenu régulier ajouté`);
+        }
+        setIncomeLabel("");
+        setIncomeAmount("");
+        setEditingIncomeId(null);
+      }
+    }
+  };
+
+  const handleIncomeEdit = (income: RecurringIncome) => {
+    setIncomeLabel(income.label);
+    setIncomeAmount(String(income.amount));
+    setEditingIncomeId(income.id);
+  };
+
+  const handleIncomeRemove = (id: string) => {
+    removeIncome(id);
+    toast(`Revenu régulier supprimé`);
+  };
 
   const byCategory = useMemo(() => {
     const sums = new Map<string, number>();
@@ -261,6 +351,164 @@ export default function App() {
           <Card title="Importer un relevé bancaire" level={3}>
             <p className="text-muted text-sm mb-3">Sélectionnez le fichier CSV exporté par votre banque (colonnes Date;Libellé;Montant, séparateur point-virgule).</p>
             <Button block icon={Upload} onClick={pickBankCsv}>Importer un relevé</Button>
+          </Card>
+          <Card title="Dépenses obligatoires mensuelles" level={3}>
+            <p className="text-muted text-sm mb-3">Loyer, électricité, internet, assurances… Ces montants sont additionnés pour voir ce qui reste pour les dépenses variables.</p>
+            <form onSubmit={handleExpenseSubmit} className="recurring-form mb-3">
+              <div className="field">
+                <label htmlFor="expense-label" className="field__label">Libellé</label>
+                <select
+                  id="expense-label"
+                  value={expenseLabel}
+                  onChange={(e) => setExpenseLabel(e.target.value)}
+                  className="field__input"
+                  required
+                >
+                  <option value="">Libellé…</option>
+                  {EXPENSE_LABELS.map((label) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="expense-category" className="field__label">Catégorie</label>
+                <select
+                  id="expense-category"
+                  value={expenseCategory}
+                  onChange={(e) => setExpenseCategory(e.target.value)}
+                  className="field__input"
+                  required
+                >
+                  <option value="">Catégorie…</option>
+                  {getRecurringExpenseCategories().map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="expense-amount" className="field__label">Montant (€)</label>
+                <input
+                  id="expense-amount"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Montant (€)"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  className="field__input"
+                  required
+                />
+              </div>
+              <Button type="submit" icon={editingExpenseId ? AlertCircle : AlertTriangle}>
+                {editingExpenseId ? "Modifier" : "Ajouter"}
+              </Button>
+              {editingExpenseId && (
+                <Button type="button" variant="plain" onClick={() => { setExpenseLabel(""); setExpenseCategory(""); setExpenseAmount(""); setEditingExpenseId(null); }}>
+                  Annuler
+                </Button>
+              )}
+            </form>
+            {recurringExpenses.length > 0 && (
+              <div>
+                <p className="text-sm text-muted mb-2">Total : <b>{money(getTotalExpenses())}</b> / mois</p>
+                {recurringExpenses.map((expense) => (
+                  <div key={expense.id} className="recurring-item flex items-center justify-between py-2 border-t">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{expense.label}</div>
+                      <div className="text-sm text-muted">{expense.category}</div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-3">
+                      <b>{money(expense.amount)}</b>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        onClick={() => handleExpenseEdit(expense)}
+                        aria-label={`Modifier ${expense.label}`}
+                      >
+                        <Tag size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        onClick={() => handleExpenseRemove(expense.id)}
+                        aria-label={`Supprimer ${expense.label}`}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+          <Card title="Revenus réguliers" level={3}>
+            <p className="text-muted text-sm mb-3">Salaire, CAF, espèces… Ces montants sont additionnés pour estimer les rentrées du mois.</p>
+            <form onSubmit={handleIncomeSubmit} className="recurring-form mb-3">
+              <div className="field">
+                <label htmlFor="income-label" className="field__label">Libellé</label>
+                <select
+                  id="income-label"
+                  value={incomeLabel}
+                  onChange={(e) => setIncomeLabel(e.target.value)}
+                  className="field__input"
+                  required
+                >
+                  <option value="">Libellé…</option>
+                  {INCOME_LABELS.map((label) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="income-amount" className="field__label">Montant (€)</label>
+                <input
+                  id="income-amount"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Montant (€)"
+                  value={incomeAmount}
+                  onChange={(e) => setIncomeAmount(e.target.value)}
+                  className="field__input"
+                  required
+                />
+              </div>
+              <Button type="submit" icon={editingIncomeId ? AlertCircle : AlertTriangle}>
+                {editingIncomeId ? "Modifier" : "Ajouter"}
+              </Button>
+              {editingIncomeId && (
+                <Button type="button" variant="plain" onClick={() => { setIncomeLabel(""); setIncomeAmount(""); setEditingIncomeId(null); }}>
+                  Annuler
+                </Button>
+              )}
+            </form>
+            {recurringIncomes.length > 0 && (
+              <div>
+                <p className="text-sm text-muted mb-2">Total : <b>{money(getTotalIncomes())}</b> / mois</p>
+                {recurringIncomes.map((income) => (
+                  <div key={income.id} className="recurring-item flex items-center justify-between py-2 border-t">
+                    <div className="font-medium truncate">{income.label}</div>
+                    <div className="flex items-center gap-2 ml-3">
+                      <b>{money(income.amount)}</b>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        onClick={() => handleIncomeEdit(income)}
+                        aria-label={`Modifier ${income.label}`}
+                      >
+                        <Tag size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        onClick={() => handleIncomeRemove(income.id)}
+                        aria-label={`Supprimer ${income.label}`}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
           <Card title="Budgets mensuels par catégorie" level={3}>
             <form onSubmit={handleBudgetSubmit} className="budget-form mb-3">

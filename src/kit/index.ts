@@ -51,3 +51,4 @@ export * from "./toast";
 export * from "./budget";
 export * from "./categorize-learn";
 export * from "./calendar";
+export * from "./recurring";
