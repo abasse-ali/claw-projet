@@ -45,9 +45,9 @@ const initial: Pick<RecurringState, "expenses" | "incomes"> = {
   incomes: [],
 };
 
-function syncForCurrentMonth() {
+function syncForCurrentMonth(expenses: RecurringExpense[], incomes: RecurringIncome[]) {
   const month = monthOf(today());
-  syncRecurringToEntries(month);
+  syncRecurringToEntries(month, expenses, incomes);
 }
 
 export const useRecurring = create<RecurringState>()(
@@ -99,7 +99,7 @@ export const useRecurring = create<RecurringState>()(
       onRehydrateStorage: () => (state: RecurringState | undefined) => {
         // Synchroniser au rechargement de la page
         if (state) {
-          syncForCurrentMonth();
+          syncForCurrentMonth(state.expenses, state.incomes);
         }
       }
     }
@@ -107,44 +107,40 @@ export const useRecurring = create<RecurringState>()(
 );
 
 // Wrapper pour déclencher la synchronisation après chaque mutation
-const originalAddExpense = useRecurring.getState().addExpense;
-const originalUpdateExpense = useRecurring.getState().updateExpense;
-const originalRemoveExpense = useRecurring.getState().removeExpense;
-const originalAddIncome = useRecurring.getState().addIncome;
-const originalUpdateIncome = useRecurring.getState().updateIncome;
-const originalRemoveIncome = useRecurring.getState().removeIncome;
-
-// On ne peut pas wrapper directement les méthodes du store Zustand après création
-// Au lieu de cela, on va exposer des fonctions qui appellent la mutation puis la sync
-
 export function addExpenseAndSync(expense: Omit<RecurringExpense, "id">): void {
   useRecurring.getState().addExpense(expense);
-  syncForCurrentMonth();
+  const { expenses, incomes } = useRecurring.getState();
+  syncForCurrentMonth(expenses, incomes);
 }
 
 export function updateExpenseAndSync(id: string, fields: Partial<Omit<RecurringExpense, "id">>): void {
   useRecurring.getState().updateExpense(id, fields);
-  syncForCurrentMonth();
+  const { expenses, incomes } = useRecurring.getState();
+  syncForCurrentMonth(expenses, incomes);
 }
 
 export function removeExpenseAndSync(id: string): void {
   useRecurring.getState().removeExpense(id);
-  syncForCurrentMonth();
+  const { expenses, incomes } = useRecurring.getState();
+  syncForCurrentMonth(expenses, incomes);
 }
 
 export function addIncomeAndSync(income: Omit<RecurringIncome, "id">): void {
   useRecurring.getState().addIncome(income);
-  syncForCurrentMonth();
+  const { expenses, incomes } = useRecurring.getState();
+  syncForCurrentMonth(expenses, incomes);
 }
 
 export function updateIncomeAndSync(id: string, fields: Partial<Omit<RecurringIncome, "id">>): void {
   useRecurring.getState().updateIncome(id, fields);
-  syncForCurrentMonth();
+  const { expenses, incomes } = useRecurring.getState();
+  syncForCurrentMonth(expenses, incomes);
 }
 
 export function removeIncomeAndSync(id: string): void {
   useRecurring.getState().removeIncome(id);
-  syncForCurrentMonth();
+  const { expenses, incomes } = useRecurring.getState();
+  syncForCurrentMonth(expenses, incomes);
 }
 
 /** Liste des catégories pour les dépenses obligatoires (réutilise les catégories existantes). */

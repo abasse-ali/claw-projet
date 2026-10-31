@@ -121,29 +121,30 @@ function recurringKey(type: "expense" | "income", label: string, month: string, 
 }
 
 /** Synchronise les dépenses obligatoires et revenus réguliers du mois courant vers les opérations.
- * Crée ou met à jour les entrées avec recurring=true pour le mois affiché. */
-export function syncRecurringToEntries(month: string): void {
-  // Import dynamique pour éviter les cycles
-  const { useRecurring } = require("./recurring");
-  const { useEntries } = require("./store");
-  const { monthOf, today } = require("./format");
-
-  const { expenses, incomes } = useRecurring.getState();
-  const { entries, add, update } = useEntries.getState();
-
-  // Construire un set des clés existantes pour ce mois
-  const existingRecurringKeys = new Set<string>();
-  const entriesByRecurringKey = new Map<string, Entry>();
-  
-  for (const entry of entries) {
-    if (entry.recurring && entry.date.startsWith(month)) {
-      // Extraire le type, label, montant depuis l'entrée
-      // On ne peut pas récupérer le type original, on utilise une approximation
-      const key = `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
-      existingRecurringKeys.add(key);
-      entriesByRecurringKey.set(key, entry);
+ * Crée ou met à jour les entrées avec recurring=true pour le mois affiché. 
+ * Reçoit les dépenses et revenus en paramètres pour éviter les dépendances circulaires. */
+export function syncRecurringToEntries(
+  month: string,
+  expenses: { id: string; label: string; category: string; amount: number }[],
+  incomes: { id: string; label: string; amount: number }[]
+): void {
+  // Fonction helper pour récupérer les entrées à jour et reconstruire l'index
+  const refreshIndex = () => {
+    const state = useEntries.getState();
+    const currentEntries = state.entries;
+    const entriesByRecurringKey = new Map<string, Entry>();
+    
+    for (const entry of currentEntries) {
+      if (entry.recurring && entry.date.startsWith(month)) {
+        const key = `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
+        entriesByRecurringKey.set(key, entry);
+      }
     }
-  }
+    return { entries: currentEntries, entriesByRecurringKey, add: state.add, update: state.update };
+  };
+
+  // Index initial
+  let { entries, entriesByRecurringKey, add, update } = refreshIndex();
 
   const monthStart = `${month}-01`;
 
@@ -170,6 +171,8 @@ export function syncRecurringToEntries(month: string): void {
         date: monthStart,
         recurring: true,
       });
+      // Rafraîchir l'index après ajout
+      ({ entries, entriesByRecurringKey, add, update } = refreshIndex());
     }
   }
 
@@ -195,6 +198,8 @@ export function syncRecurringToEntries(month: string): void {
         date: monthStart,
         recurring: true,
       });
+      // Rafraîchir l'index après ajout
+      ({ entries, entriesByRecurringKey, add, update } = refreshIndex());
     }
   }
 
@@ -207,12 +212,14 @@ export function syncRecurringToEntries(month: string): void {
     currentKeys.add(`${income.label.trim().toLowerCase()}|${month}|${Math.round(income.amount * 100)}`);
   }
 
+  // Rafraîchir une dernière fois pour avoir toutes les entrées à jour
+  ({ entries } = refreshIndex());
+
   for (const entry of entries) {
     if (entry.recurring && entry.date.startsWith(month)) {
       const key = `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
       if (!currentKeys.has(key)) {
         // Cette entrée récurrente n'a plus de correspondant, la supprimer
-        // On utilise une méthode directe pour éviter de déclencher des effets de bord
         useEntries.setState({ 
           entries: entries.filter((e: Entry) => e.id !== entry.id) 
         });

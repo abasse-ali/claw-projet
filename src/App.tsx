@@ -194,8 +194,8 @@ export default function App() {
 
   // Synchroniser les dépenses/revenus récurrents quand le mois change
   useEffect(() => {
-    syncRecurringToEntries(month);
-  }, [month]);
+    syncRecurringToEntries(month, recurringExpenses, recurringIncomes);
+  }, [month, recurringExpenses, recurringIncomes]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
