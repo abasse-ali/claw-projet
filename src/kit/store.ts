@@ -14,6 +14,8 @@ export type Entry = {
   category: string;
   /** « 2026-10-28 ». */
   date: string;
+  /** Marque une opération générée automatiquement à partir d'une dépense obligatoire ou d'un revenu régulier. */
+  recurring?: boolean;
 };
 
 export type NewEntry = Omit<Entry, "id" | "date"> & { date?: string };
@@ -112,3 +114,109 @@ export const newestFirst = (entries: Entry[]) =>
   entries.map((entry, index) => [entry, index] as const)
     .sort((a, b) => b[0].date.localeCompare(a[0].date) || b[1] - a[1])
     .map(([entry]) => entry);
+
+/** Génère une clé unique pour une opération récurrente (pour éviter les doublons). */
+function recurringKey(type: "expense" | "income", label: string, month: string, amount: number): string {
+  return `recurring|${type}|${label.trim().toLowerCase()}|${month}|${Math.round(amount * 100)}`;
+}
+
+/** Synchronise les dépenses obligatoires et revenus réguliers du mois courant vers les opérations.
+ * Crée ou met à jour les entrées avec recurring=true pour le mois affiché. */
+export function syncRecurringToEntries(month: string): void {
+  // Import dynamique pour éviter les cycles
+  const { useRecurring } = require("./recurring");
+  const { useEntries } = require("./store");
+  const { monthOf, today } = require("./format");
+
+  const { expenses, incomes } = useRecurring.getState();
+  const { entries, add, update } = useEntries.getState();
+
+  // Construire un set des clés existantes pour ce mois
+  const existingRecurringKeys = new Set<string>();
+  const entriesByRecurringKey = new Map<string, Entry>();
+  
+  for (const entry of entries) {
+    if (entry.recurring && entry.date.startsWith(month)) {
+      // Extraire le type, label, montant depuis l'entrée
+      // On ne peut pas récupérer le type original, on utilise une approximation
+      const key = `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
+      existingRecurringKeys.add(key);
+      entriesByRecurringKey.set(key, entry);
+    }
+  }
+
+  const monthStart = `${month}-01`;
+
+  // Synchroniser les dépenses obligatoires (montants négatifs)
+  for (const expense of expenses) {
+    const key = `${expense.label.trim().toLowerCase()}|${month}|${Math.round(expense.amount * 100)}`;
+    const existing = entriesByRecurringKey.get(key);
+    
+    if (existing) {
+      // Mettre à jour si montant ou catégorie a changé
+      if (existing.amount !== -expense.amount || existing.category !== expense.category || existing.label !== expense.label) {
+        update(existing.id, { 
+          amount: -expense.amount, 
+          category: expense.category, 
+          label: expense.label 
+        });
+      }
+    } else {
+      // Créer nouvelle entrée
+      add({
+        label: expense.label,
+        amount: -expense.amount,
+        category: expense.category,
+        date: monthStart,
+        recurring: true,
+      });
+    }
+  }
+
+  // Synchroniser les revenus réguliers (montants positifs)
+  for (const income of incomes) {
+    const key = `${income.label.trim().toLowerCase()}|${month}|${Math.round(income.amount * 100)}`;
+    const existing = entriesByRecurringKey.get(key);
+    
+    if (existing) {
+      // Mettre à jour si montant ou label a changé
+      if (existing.amount !== income.amount || existing.label !== income.label) {
+        update(existing.id, { 
+          amount: income.amount, 
+          label: income.label 
+        });
+      }
+    } else {
+      // Créer nouvelle entrée
+      add({
+        label: income.label,
+        amount: income.amount,
+        category: "Salaire", // Catégorie par défaut pour les revenus
+        date: monthStart,
+        recurring: true,
+      });
+    }
+  }
+
+  // Supprimer les entrées récurrentes qui ne correspondent plus à aucune dépense/revenu
+  const currentKeys = new Set<string>();
+  for (const expense of expenses) {
+    currentKeys.add(`${expense.label.trim().toLowerCase()}|${month}|${Math.round(expense.amount * 100)}`);
+  }
+  for (const income of incomes) {
+    currentKeys.add(`${income.label.trim().toLowerCase()}|${month}|${Math.round(income.amount * 100)}`);
+  }
+
+  for (const entry of entries) {
+    if (entry.recurring && entry.date.startsWith(month)) {
+      const key = `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
+      if (!currentKeys.has(key)) {
+        // Cette entrée récurrente n'a plus de correspondant, la supprimer
+        // On utilise une méthode directe pour éviter de déclencher des effets de bord
+        useEntries.setState({ 
+          entries: entries.filter((e: Entry) => e.id !== entry.id) 
+        });
+      }
+    }
+  }
+}

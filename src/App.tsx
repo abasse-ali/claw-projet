@@ -1,6 +1,6 @@
 // L'appli budget : import relevés bancaires, catégorisation auto, solde mensuel et dépenses par catégorie.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   AppShell,
   Button,
@@ -50,6 +50,13 @@ import {
   EXPENSE_LABELS,
   type RecurringExpense,
   type RecurringIncome,
+  addExpenseAndSync,
+  updateExpenseAndSync,
+  removeExpenseAndSync,
+  addIncomeAndSync,
+  updateIncomeAndSync,
+  removeIncomeAndSync,
+  syncRecurringToEntries,
 } from "./kit";
 import { ArrowDownCircle, ArrowRightLeft, Bus, Calendar, ChartColumn, Download, Gamepad2, HeartPulse, Home, List as ListIcon, Receipt, Search as SearchIcon, Settings as SettingsIcon, ShoppingBag, ShoppingCart, Tag, Trash2, Upload, Utensils, Wallet, X, AlertTriangle, AlertCircle } from "lucide-react";
 import { MonthCalendar } from "./kit";
@@ -98,12 +105,6 @@ export default function App() {
   // Recurring expenses
   const recurringExpenses = useRecurring((state) => state.expenses);
   const recurringIncomes = useRecurring((state) => state.incomes);
-  const addExpense = useRecurring((state) => state.addExpense);
-  const updateExpense = useRecurring((state) => state.updateExpense);
-  const removeExpense = useRecurring((state) => state.removeExpense);
-  const addIncome = useRecurring((state) => state.addIncome);
-  const updateIncome = useRecurring((state) => state.updateIncome);
-  const removeIncome = useRecurring((state) => state.removeIncome);
   const getTotalExpenses = useRecurring((state) => state.getTotalExpenses);
   const getTotalIncomes = useRecurring((state) => state.getTotalIncomes);
 
@@ -122,10 +123,10 @@ export default function App() {
       const amount = parseFloat(expenseAmount.replace(",", "."));
       if (amount > 0) {
         if (editingExpenseId) {
-          updateExpense(editingExpenseId, { label: expenseLabel, category: expenseCategory, amount });
+          updateExpenseAndSync(editingExpenseId, { label: expenseLabel, category: expenseCategory, amount });
           toast(`Dépense obligatoire modifiée`);
         } else {
-          addExpense({ label: expenseLabel, category: expenseCategory, amount });
+          addExpenseAndSync({ label: expenseLabel, category: expenseCategory, amount });
           toast(`Dépense obligatoire ajoutée`);
         }
         setExpenseLabel("");
@@ -144,7 +145,7 @@ export default function App() {
   };
 
   const handleExpenseRemove = (id: string) => {
-    removeExpense(id);
+    removeExpenseAndSync(id);
     toast(`Dépense obligatoire supprimée`);
   };
 
@@ -154,10 +155,10 @@ export default function App() {
       const amount = parseFloat(incomeAmount.replace(",", "."));
       if (amount > 0) {
         if (editingIncomeId) {
-          updateIncome(editingIncomeId, { label: incomeLabel, amount });
+          updateIncomeAndSync(editingIncomeId, { label: incomeLabel, amount });
           toast(`Revenu régulier modifié`);
         } else {
-          addIncome({ label: incomeLabel, amount });
+          addIncomeAndSync({ label: incomeLabel, amount });
           toast(`Revenu régulier ajouté`);
         }
         setIncomeLabel("");
@@ -174,7 +175,7 @@ export default function App() {
   };
 
   const handleIncomeRemove = (id: string) => {
-    removeIncome(id);
+    removeIncomeAndSync(id);
     toast(`Revenu régulier supprimé`);
   };
 
@@ -190,6 +191,11 @@ export default function App() {
 
   const overBudget = useMemo(() => getOverBudget(allEntries, month), [allEntries, month, getOverBudget]);
   const nearBudget = useMemo(() => getNearBudget(allEntries, month), [allEntries, month, getNearBudget]);
+
+  // Synchroniser les dépenses/revenus récurrents quand le mois change
+  useEffect(() => {
+    syncRecurringToEntries(month);
+  }, [month]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
