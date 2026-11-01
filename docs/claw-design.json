@@ -5,6 +5,92 @@
  "items": {
   "#accueil|section:0": {
    "hidden": true
+  },
+  "#bilan|section:2/div:1/div:3/div:2": {
+   "hidden": true
+  },
+  "#bilan|section:2/div:1/div:3/div:0": {
+   "style": {},
+   "place": {
+    "col": 1,
+    "span": 2,
+    "row": 1
+   }
+  },
+  "#bilan|section:2/div:1/div:3/div:1": {
+   "style": {},
+   "place": {
+    "col": 3,
+    "span": 2,
+    "row": 1
+   }
+  },
+  "#bilan|section:2/div:1/div:3": {
+   "grid": {
+    "columns": 4,
+    "gap": 12
+   }
+  },
+  "#reglages|section:1/form:0": {
+   "grid": {
+    "columns": 4,
+    "gap": 12
+   }
+  },
+  "#reglages|section:1/form:0/div:0": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 1
+   }
+  },
+  "#reglages|section:1/form:0/div:1": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 2
+   }
+  },
+  "#reglages|section:1/form:0/div:2": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 3
+   }
+  },
+  "#reglages|section:1/form:0/button:0": {
+   "place": {
+    "col": 1,
+    "span": 2,
+    "row": 4
+   }
+  },
+  "#reglages|section:2/form:0": {
+   "grid": {
+    "columns": 4,
+    "gap": 12
+   }
+  },
+  "#reglages|section:2/form:0/div:0": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 1
+   }
+  },
+  "#reglages|section:2/form:0/div:1": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 2
+   }
+  },
+  "#reglages|section:2/form:0/button:0": {
+   "place": {
+    "col": 1,
+    "span": 2,
+    "row": 3
+   }
   }
  },
  "added": [],
