@@ -13,6 +13,9 @@ export type RecurringExpense = {
   category: string;
   /** Montant positif en euros. */
   amount: number;
+  /** Premier jour où elle compte (« 2026-11-05 ») : chaque mois à partir de ce mois-là, au même
+   * jour. Sans date : tous les mois, au 1er. */
+  since?: string;
 };
 
 export type RecurringIncome = {
@@ -20,6 +23,8 @@ export type RecurringIncome = {
   label: string;
   /** Montant positif en euros. */
   amount: number;
+  category?: string;
+  since?: string;
 };
 
 type RecurringState = {
@@ -117,6 +122,19 @@ export const useRecurring = create<RecurringState>()(
     }
   )
 );
+
+/** Synchronise chaque mois de `from` à `to` (« 2026-08 » … « 2026-11 ») : une opération
+ * récurrente ajoutée avec une date passée apparaît dans tous les mois depuis cette date. */
+export function syncMonths(from: string, to: string): void {
+  const { expenses, incomes } = useRecurring.getState();
+  for (let month = from, guard = 0; month <= to && guard < 240; month = nextMonth(month), guard += 1) {
+    syncRecurringToEntries(month, expenses, incomes);
+  }
+}
+function nextMonth(month: string): string {
+  const [year, number] = month.split("-").map(Number);
+  return number === 12 ? `${year + 1}-01` : `${year}-${String(number + 1).padStart(2, "0")}`;
+}
 
 // Wrapper pour déclencher la synchronisation après chaque mutation
 export function addExpenseAndSync(expense: Omit<RecurringExpense, "id">): void {

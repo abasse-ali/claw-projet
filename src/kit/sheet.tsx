@@ -10,6 +10,7 @@ import { Icon, type LucideIcon } from "./icons";
 import { IconButton } from "./layout";
 import { useEntries, type Entry } from "./store";
 import { useCategorizeLearn } from "./categorize-learn";
+import { syncMonths, useRecurring } from "./recurring";
 import { toast } from "./toast";
 
 /** Ouvre ou ferme le <dialog> avec `open` ; Échap et un appui sur le fond appellent `onClose`. */
@@ -119,6 +120,8 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
   const [category, setCategory] = useState(categories[0]?.name ?? "");
   const [label, setLabel] = useState("");
   const [date, setDate] = useState(today());
+  // Récurrent : la même opération chaque mois à partir de la date renseignée.
+  const [repeat, setRepeat] = useState(false);
   const [invalid, setInvalid] = useState(false);
   const amountInput = useRef<HTMLInputElement>(null);
   const ids = useId();
@@ -132,6 +135,7 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
     setCategory(entry?.category || categories[0]?.name || "");
     setLabel(entry?.label ?? "");
     setDate(entry?.date ?? today());
+    setRepeat(Boolean(entry?.recurring));
     setInvalid(false);
     if (!entry) setTimeout(() => amountInput.current?.focus(), 60);
   }, [open, entry, categories]);
@@ -146,6 +150,22 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
     }
     const fields = { label: label.trim() || category, amount: kind === "in" ? value : -value, category, date: date || today() };
     close();
+    if (repeat && !entry?.recurring) {
+      // L'opération devient une dépense obligatoire ou un revenu régulier (Réglages), à partir de
+      // sa date : elle apparaît ce mois-là et chaque mois suivant, une seule fois par mois.
+      if (entry) remove(entry.id);
+      const recurring = useRecurring.getState();
+      const item = { label: fields.label, amount: value, category, since: fields.date };
+      if (kind === "in") recurring.addIncome(item);
+      else recurring.addExpense(item);
+      const from = monthOf(fields.date);
+      const now = monthOf(today());
+      syncMonths(from, [now, month, from].sort().pop() as string);
+      if (from !== month) setMonth(from);
+      const [year, monthNumber, day] = fields.date.split("-");
+      toast(`${kind === "in" ? kinds.in : kinds.out} de ${money(value)} chaque mois à partir du ${day}/${monthNumber}/${year}`);
+      return;
+    }
     if (entry) {
       update(entry.id, fields);
       // Apprendre la correction si la catégorie a changé
@@ -239,6 +259,14 @@ export function EntrySheet({ categories, kinds = { out: "Dépense", in: "Rentré
             <input id={`${ids}-date`} type="date" value={date} onChange={(event) => setDate(event.target.value)} />
           </div>
         </div>
+        {entry?.recurring ? (
+          <p className="sheet__repeat-note">Opération récurrente : son montant et son arrêt se règlent dans Réglages.</p>
+        ) : (
+          <label className="sheet__repeat">
+            <input type="checkbox" checked={repeat} onChange={(event) => setRepeat(event.target.checked)} />
+            <span>Récurrent tous les mois à partir de cette date</span>
+          </label>
+        )}
         <button className="btn btn--primary btn--block" type="submit">{entry ? "Enregistrer" : submitLabel}</button>
         {entry && <button className="btn btn--danger btn--block" type="button" onClick={removeEntry}>Supprimer l'opération</button>}
       </form>

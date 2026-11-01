@@ -133,9 +133,18 @@ function roundToCents(amount: number): number {
  * Reçoit les dépenses et revenus en paramètres pour éviter les dépendances circulaires. */
 export function syncRecurringToEntries(
   month: string,
-  expenses: { id: string; label: string; category: string; amount: number }[],
-  incomes: { id: string; label: string; amount: number }[]
+  allExpenses: { id: string; label: string; category: string; amount: number; since?: string }[],
+  allIncomes: { id: string; label: string; amount: number; category?: string; since?: string }[]
 ): void {
+  // Une opération récurrente compte à partir du mois de sa date de départ, au même jour.
+  const active = <T extends { since?: string }>(item: T) => !item.since || item.since.slice(0, 7) <= month;
+  const expenses = allExpenses.filter(active);
+  const incomes = allIncomes.filter(active);
+  const lastDay = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+  const dayOf = (item: { since?: string }) => {
+    const day = item.since ? Number(item.since.slice(8, 10)) || 1 : 1;
+    return `${month}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
+  };
   // Fonction helper pour récupérer les entrées à jour et reconstruire l'index
   const refreshIndex = () => {
     const state = useEntries.getState();
@@ -193,11 +202,12 @@ export function syncRecurringToEntries(
     
     if (existing) {
       // Mettre à jour si montant, catégorie ou label a changé
-      if (existing.amount !== -expenseAmountRounded || existing.category !== expense.category || existing.label !== expense.label) {
+      if (existing.amount !== -expenseAmountRounded || existing.category !== expense.category || existing.label !== expense.label || existing.date !== dayOf(expense)) {
         update(existing.id, { 
           amount: -expenseAmountRounded, 
           category: expense.category, 
-          label: expense.label 
+          label: expense.label,
+          date: dayOf(expense),
         });
         // Rafraîchir l'index après mise à jour (le label a pu changer)
         ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
@@ -208,7 +218,7 @@ export function syncRecurringToEntries(
         label: expense.label,
         amount: -expenseAmountRounded,
         category: expense.category,
-        date: monthStart,
+        date: dayOf(expense),
         recurring: true,
       });
       // Rafraîchir l'index après ajout
@@ -224,10 +234,11 @@ export function syncRecurringToEntries(
     
     if (existing) {
       // Mettre à jour si montant ou label a changé
-      if (existing.amount !== incomeAmountRounded || existing.label !== income.label) {
+      if (existing.amount !== incomeAmountRounded || existing.label !== income.label || existing.date !== dayOf(income)) {
         update(existing.id, { 
           amount: incomeAmountRounded, 
-          label: income.label 
+          label: income.label,
+          date: dayOf(income),
         });
         // Rafraîchir l'index après mise à jour
         ({ entries, entriesByRecurringKey, add, update, remove } = refreshIndex());
@@ -237,8 +248,8 @@ export function syncRecurringToEntries(
       add({
         label: income.label,
         amount: incomeAmountRounded,
-        category: "Salaire", // Catégorie par défaut pour les revenus
-        date: monthStart,
+        category: income.category || "Salaire", // Catégorie par défaut pour les revenus
+        date: dayOf(income),
         recurring: true,
       });
       // Rafraîchir l'index après ajout

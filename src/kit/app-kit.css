@@ -510,3 +510,9 @@ body:has(dialog[open]) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Case « Récurrent tous les mois », sous la date du volet Nouvelle opération. */
+.sheet__repeat { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--field); color: var(--ink); font-weight: 600; cursor: pointer; }
+.sheet__repeat input { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--accent); }
+.sheet__repeat:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.sheet__repeat-note { margin: 0; color: var(--muted); font-size: 0.875rem; }
