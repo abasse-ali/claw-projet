@@ -64,6 +64,33 @@
     "span": 2,
     "row": 4
    }
+  },
+  "#reglages|section:2/form:0": {
+   "grid": {
+    "columns": 4,
+    "gap": 12
+   }
+  },
+  "#reglages|section:2/form:0/div:0": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 1
+   }
+  },
+  "#reglages|section:2/form:0/div:1": {
+   "place": {
+    "col": 1,
+    "span": 4,
+    "row": 2
+   }
+  },
+  "#reglages|section:2/form:0/button:0": {
+   "place": {
+    "col": 1,
+    "span": 2,
+    "row": 3
+   }
   }
  },
  "added": [],
