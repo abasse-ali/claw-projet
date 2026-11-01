@@ -5,6 +5,31 @@
  "items": {
   "#accueil|section:0": {
    "hidden": true
+  },
+  "#bilan|section:2/div:1/div:3/div:2": {
+   "hidden": true
+  },
+  "#bilan|section:2/div:1/div:3/div:0": {
+   "style": {},
+   "place": {
+    "col": 1,
+    "span": 2,
+    "row": 1
+   }
+  },
+  "#bilan|section:2/div:1/div:3/div:1": {
+   "style": {},
+   "place": {
+    "col": 3,
+    "span": 2,
+    "row": 1
+   }
+  },
+  "#bilan|section:2/div:1/div:3": {
+   "grid": {
+    "columns": 4,
+    "gap": 12
+   }
   }
  },
  "added": [],
