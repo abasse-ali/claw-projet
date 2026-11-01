@@ -14,13 +14,13 @@
   :root:not([data-theme="light"]) {
     --accent: #9a8cf0;
     /* Fix danger button contrast in dark mode */
-    --error: #e03e3e;
+    --error: #b91c1c;
     --error-soft: color-mix(in srgb, var(--error) 18%, var(--surface));
   }
 }
 :root[data-theme="dark"] {
   --accent: #9a8cf0;
   /* Fix danger button contrast in dark mode */
-  --error: #e03e3e;
+  --error: #b91c1c;
   --error-soft: color-mix(in srgb, var(--error) 18%, var(--surface));
 }

@@ -6,16 +6,21 @@ import {
   Camera,
   Check,
   Coffee,
+  Download,
   Edit,
   MapPin,
   Milk,
   Package,
+  PiggyBank,
   Plus,
   Settings,
+  Share2,
   ShoppingBag,
   ShoppingCart,
   Square,
   Store,
+  Trash2,
+  Upload,
   Wheat,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -55,8 +60,8 @@ seedShoppingData();
 const TABS = [
   { id: "courses", label: "Courses", icon: ShoppingCart },
   { id: "magasins", label: "Magasins", icon: Store },
-  { id: "partage", label: "Partage", icon: ShoppingBag },
-  { id: "budget", label: "Budget", icon: Settings },
+  { id: "partage", label: "Partage", icon: Share2 },
+  { id: "budget", label: "Budget", icon: PiggyBank },
 ];
 
 const CATEGORIES = [
@@ -375,7 +380,7 @@ export default function App() {
 
           <SettingsComp>
             <Setting name="Budget mensuel" note="Plafond pour les courses">
-              <label htmlFor="budget-input" className="visually-hidden">Budget mensuel en euros</label>
+              <label htmlFor="budget-input">Budget mensuel en euros</label>
               <input
                 id="budget-input"
                 type="number"
@@ -393,7 +398,7 @@ export default function App() {
             <p className="text-muted mb-3">Elles restent sur ce téléphone. Gardez-en une copie de temps en temps.</p>
             <div className="grid gap-2.5">
               <ButtonRow>
-                <Button small icon={Camera} onClick={() => {
+                <Button small icon={Download} onClick={() => {
                   const data = exportData();
                   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
                   const url = URL.createObjectURL(blob);
@@ -405,7 +410,7 @@ export default function App() {
                 }}>
                   Exporter JSON
                 </Button>
-                <Button small icon={Camera} variant="plain" onClick={() => {
+                <Button small icon={Upload} variant="plain" onClick={() => {
                   const input = document.createElement("input");
                   input.type = "file";
                   input.accept = ".json";
@@ -430,7 +435,7 @@ export default function App() {
                   Importer JSON
                 </Button>
               </ButtonRow>
-              <Button small block variant="danger" icon={Package} onClick={() => setConfirmClear(true)}>
+              <Button small block variant="danger" icon={Trash2} onClick={() => setConfirmClear(true)}>
                 Tout effacer
               </Button>
             </div>

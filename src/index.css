@@ -4,6 +4,7 @@
 @import "./kit/app-kit.css" layer(components);
 @import "../base.css";
 @import "./theme.css";
+@import "./fixes.css";
 
 /* Les jetons du kit en couleurs de Tailwind : bg-surface, text-muted, border-line, text-accent… */
 @theme inline {

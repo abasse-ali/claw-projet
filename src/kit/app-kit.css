@@ -13,6 +13,7 @@
   --accent: #5b4bd6;
   --on-accent: #ffffff;
   --income: #0b7a3b;
+  --error: #dc2626;
   --warn: #845700;
   --field: var(--surface);
   --radius: 20px;
@@ -61,7 +62,7 @@
     --line: rgb(255 255 255 / 0.09);
     --accent: #9a8cf0;
     --income: #4cc57a;
-    --error: #e03e3e;
+    --error: #b91c1c;
     --warn: #eeb44a;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
   }
@@ -76,7 +77,7 @@
   --line: rgb(255 255 255 / 0.09);
   --accent: #9a8cf0;
   --income: #4cc57a;
-  --error: #e03e3e;
+  --error: #b91c1c;
   --warn: #eeb44a;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
 }
@@ -323,10 +324,10 @@
 .money > input:focus { outline: none; }
 .money > span { flex: none; color: var(--faint); font-weight: 600; }
 .settings { display: grid; }
-.settings > .setting { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; border-top: 1px solid var(--line); }
+.settings > .setting { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .settings > .setting:first-child { border-top: 0; }
-.setting__name { flex: 1; min-width: 0; font-weight: 600; font-size: 0.9375rem; }
-.setting__name small { display: block; color: var(--faint); font-size: 0.75rem; font-weight: 500; }
+.setting__name { flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 0.9375rem; }
+.setting__name small { display: block; color: var(--faint); font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
 .setting > .money, .setting > .input { flex: none; width: 132px; }
 
 /* État vide */
@@ -351,7 +352,7 @@
 .tabbar__tab > span { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .tabbar__tab:hover { color: var(--muted); }
 .tabbar__tab:active { transform: scale(0.95); }
-.tabbar__tab[aria-current="page"] { color: var(--accent-ink); }
+.tabbar__tab[aria-current="page"] { color: var(--income); }
 .tabbar__add { display: grid; flex: none; place-items: center; width: 56px; height: 56px; margin: 0 4px; padding: 0; border: 0; border-radius: 19px; color: var(--on-hero); background: linear-gradient(135deg, var(--hero-1), var(--hero-2)); box-shadow: 0 8px 20px -4px color-mix(in srgb, var(--hero-1) 60%, transparent); transition: transform 0.15s; }
 .tabbar__add .icon { width: 28px; height: 28px; stroke-width: 2.5; }
 .tabbar__add:active { transform: scale(0.94); }

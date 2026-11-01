@@ -6,11 +6,91 @@ dialog.modal::backdrop {
   pointer-events: none;
 }
 
-/* 2. MapView Leaflet : largeur complète */
+/* 2. MapView Leaflet : largeur complète, overflow caché, isolation pour empilement */
 .map-view {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 300px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Le wrapper .map ne doit pas contraindre la carte */
+.map {
   width: 100%;
   min-width: 0;
-  height: 300px;
+}
+
+/* Leaflet container et controls doivent respecter l'overflow */
+.map-view.leaflet-container,
+.map-view .leaflet-container {
+  overflow: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Z-index pour les couches Leaflet : tuiles en bas, marqueurs au-dessus, contrôles tout en haut */
+.map-view .leaflet-tile-pane {
+  z-index: 100 !important;
+}
+
+.map-view .leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+.map-view .leaflet-popup-pane {
+  z-index: 700 !important;
+}
+
+.map-view .leaflet-control-container {
+  z-index: 1000 !important;
+}
+
+/* Les boutons de zoom Leaflet stylisés comme des boutons accessibles */
+.map-view .leaflet-bar {
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  z-index: 1000 !important;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.map-view .leaflet-bar a,
+.map-view .leaflet-bar button {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 20px;
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+  display: block;
+  text-decoration: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.map-view .leaflet-bar a:first-child,
+.map-view .leaflet-bar button:first-child {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.map-view .leaflet-bar a:last-child,
+.map-view .leaflet-bar button:last-child {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+/* Attribution ne doit pas être recouverte par les tuiles */
+.map-view .leaflet-control-attribution {
+  z-index: 1000 !important;
+  position: relative !important;
+}
+
+/* S'assurer que les tuiles ne débordent pas */
+.map-view .leaflet-tile-pane {
+  overflow: hidden;
 }
 
 /* 3. Tiles : flex-wrap wrap, label nowrap, value min-width */
@@ -49,14 +129,14 @@ dialog.modal::backdrop {
   text-overflow: ellipsis;
 }
 
-/* 4. Bouton danger : contraste amélioré en utilisant les variables CSS */
+/* 4. Bouton danger : utiliser le style solide pour un meilleur contraste (blanc sur --error) */
 .btn--danger {
-  background: var(--error-soft);
-  color: var(--error);
+  background: var(--error);
+  color: #fff;
 }
 
 .btn--danger:hover {
-  filter: brightness(0.95);
+  filter: brightness(1.08);
 }
 
 .btn--danger:active {
