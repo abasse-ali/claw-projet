@@ -37,7 +37,10 @@ type EntriesState = {
 
 let counter = 0;
 const newId = () => `${Date.now().toString(36)}-${(counter++).toString(36)}`;
+// Les champs ajoutés par l'appli (comme `recurring`) restent : sans eux, la synchronisation ne
+// retrouvait jamais ses opérations et les recréait à chaque ouverture et changement de mois.
 const clean = (entry: NewEntry, id = newId()): Entry => ({
+  ...(entry as Partial<Entry>),
   id,
   label: String(entry.label || "").trim() || "Sans nom",
   amount: Number.isFinite(entry.amount) ? Math.round(entry.amount * 100) / 100 : 0,
@@ -148,10 +151,39 @@ export function syncRecurringToEntries(
     return { entries: currentEntries, entriesByRecurringKey, add: state.add, update: state.update, remove: state.remove };
   };
 
+  const monthStart = `${month}-01`;
+  const keyOfEntry = (entry: Entry) => `${entry.label.trim().toLowerCase()}|${month}|${Math.round(Math.abs(entry.amount) * 100)}`;
+  const wanted = new Set<string>([
+    ...expenses.map((expense) => `${expense.label.trim().toLowerCase()}|${month}|${Math.round(roundToCents(expense.amount) * 100)}`),
+    ...incomes.map((income) => `${income.label.trim().toLowerCase()}|${month}|${Math.round(roundToCents(income.amount) * 100)}`),
+  ]);
+  // Réparation des doublons déjà créés : avant cette correction, la marque `recurring` se perdait,
+  // et chaque passage ajoutait une copie au 1er du mois. Une seule par dépense ou revenu reste.
+  {
+    const seen = new Set<string>();
+    const extra = new Set<string>();
+    const mark = new Set<string>();
+    for (const entry of useEntries.getState().entries) {
+      if (!entry.date.startsWith(month)) continue;
+      const key = keyOfEntry(entry);
+      if (!wanted.has(key) || !(entry.recurring || entry.date === monthStart)) continue;
+      if (seen.has(key)) extra.add(entry.id);
+      else {
+        seen.add(key);
+        if (!entry.recurring) mark.add(entry.id);
+      }
+    }
+    if (extra.size || mark.size) {
+      useEntries.setState((state) => ({
+        entries: state.entries
+          .filter((entry) => !extra.has(entry.id))
+          .map((entry) => (mark.has(entry.id) ? { ...entry, recurring: true } : entry)),
+      }));
+    }
+  }
+
   // Index initial
   let { entries, entriesByRecurringKey, add, update, remove } = refreshIndex();
-
-  const monthStart = `${month}-01`;
 
   // Synchroniser les dépenses obligatoires (montants négatifs)
   for (const expense of expenses) {
